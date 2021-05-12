@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;
@@ -11,12 +11,21 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+
     pub fn length(&self) -> f32 {
-        f32::sqrt(self.x.sqrt() + self.y.sqrt() + self.z.sqrt())
+        f32::sqrt(self.x.powi(2) + self.y.powi(2) + self.z.powi(2))
     }
 
     pub fn length_squared(&self) -> f32 {
         self.x.sqrt() + self.y.sqrt() + self.z.sqrt()
+    }
+
+    pub fn unit(&self) -> Self {
+        let length = self.length();
+        *self / length
     }
 
     pub fn dot(&self, rhs: &Self) -> f32 {
@@ -52,6 +61,18 @@ impl Add for Vec3 {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
             z: self.z + rhs.z,
+        }
+    }
+}
+
+impl Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
         }
     }
 }
