@@ -15,7 +15,18 @@ const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
 const BUFFER_LENGTH: u32 = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 const PITCH: u32 = SCREEN_WIDTH * 3;
 
+fn hit_sphere(center: &Point3, radius: f32, ray: &Ray) -> bool {
+    let os = ray.origin - *center;
+    let a = ray.direction.dot(&ray.direction);
+    let b = os.dot(&ray.direction) * 2.0;
+    let c = os.dot(&os) - radius * radius;
+    (b * b - 4.0 * a * c) > 0.0
+}
+
 fn ray_color(ray: &Ray) -> Color {
+    if hit_sphere(&Point3::new(0.0, 0.0, 1.0), 0.2, &ray) {
+        return Color::new(1.0, 0.0, 0.0);
+    }
     let unit_direction = ray.direction.unit();
     let t = 0.5 * (-unit_direction.y + 1.0);
     Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
