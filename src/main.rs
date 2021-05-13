@@ -1,8 +1,13 @@
+use rand::{
+    distributions::{Distribution, Uniform},
+    Rng,
+};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 
+mod camera;
 mod hittable;
 mod ray;
 mod sphere;
@@ -10,6 +15,7 @@ mod vec3;
 mod world;
 
 use crate::hittable::Hittable;
+use camera::*;
 use ray::*;
 use sphere::*;
 use vec3::*;
@@ -20,46 +26,48 @@ const SCREEN_WIDTH: u32 = 1280;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
 const BUFFER_LENGTH: u32 = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 const PITCH: u32 = SCREEN_WIDTH * 3;
+const SAMPLES_PER_PIXEL: u32 = 10;
 
 fn ray_color(ray: &Ray, world: &World) -> Color {
     if let Some(record) = world.hit(&ray, 0.0, f32::INFINITY) {
-        return (record.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
+        return 0.5 * (record.normal + Color::new(1.0, 1.0, 1.0));
     }
     let unit_direction = ray.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
-    Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+}
+
+fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pixel: u32) {
+    let r = color.x / samples_per_pixel as f32;
+    let g = color.y / samples_per_pixel as f32;
+    let b = color.z / samples_per_pixel as f32;
+
+    let offset = (SCREEN_HEIGHT - 1 - y) as usize * PITCH as usize + x as usize * 3; // for OpenGl reverse y coord
+    buffer[offset] = (255.999 * r.clamp(0.0, 0.999)) as u8;
+    buffer[offset + 1] = (255.999 * g.clamp(0.0, 0.999)) as u8;
+    buffer[offset + 2] = (255.999 * b.clamp(0.0, 0.999)) as u8;
 }
 
 fn create_texture() -> Vec<u8> {
-    let viewport_height = 2.0;
-    let viewport_width = ASPECT_RATIO * viewport_height;
-    let focal_length = 1.0;
-
     let mut world = World::default();
     world.add_object(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
     world.add_object(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add_object(Box::new(Sphere::new(Point3::new(1.0, -0.1, -1.0), 0.2)));
 
-    let origin = Point3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    let camera = Camera::new(ASPECT_RATIO);
 
     let mut buffer = vec![0u8; BUFFER_LENGTH as usize];
+    let mut rng = rand::thread_rng();
+    let mut uniform = rand::distributions::Uniform::new(0.0, 1.0);
     for y in 0..SCREEN_HEIGHT {
         for x in 0..SCREEN_WIDTH {
-            let u = x as f32 / (SCREEN_WIDTH - 1) as f32;
-            let v = y as f32 / (SCREEN_HEIGHT - 1) as f32;
-
-            let dir = lower_left_corner + horizontal * u + vertical * v - origin;
-            let r = Ray::new(origin, dir);
-            let color = ray_color(&r, &world);
-
-            let offset = (SCREEN_HEIGHT - 1 - y) as usize * PITCH as usize + x as usize * 3; // for OpenGl reverse y coord
-            buffer[offset] = (255.999 * color.x) as u8;
-            buffer[offset + 1] = (255.999 * color.y) as u8;
-            buffer[offset + 2] = (255.999 * color.z) as u8;
+            let mut color = Color::new(0.0, 0.0, 0.0);
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let u = (x as f32 + uniform.sample(&mut rng)) / (SCREEN_WIDTH - 1) as f32;
+                let v = (y as f32 + uniform.sample(&mut rng)) / (SCREEN_HEIGHT - 1) as f32;
+                let r = camera.get_ray(u, v);
+                color += ray_color(&r, &world);
+            }
+            write_pixel(&mut buffer, x, y, &color, SAMPLES_PER_PIXEL);
         }
     }
     buffer
@@ -83,7 +91,11 @@ pub fn main() -> Result<(), String> {
         .create_texture_streaming(PixelFormatEnum::RGB24, SCREEN_WIDTH, SCREEN_HEIGHT)
         .map_err(|e| e.to_string())?;
 
+    let now = std::time::Instant::now();
     let buffer = create_texture();
+    let delta = std::time::Instant::now() - now;
+    println!("Texture created in {}ms", delta.as_millis());
+
     texture.update(None, &buffer, PITCH as usize);
 
     canvas.clear();
