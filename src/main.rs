@@ -38,6 +38,7 @@ fn create_texture() -> Vec<u8> {
     let mut world = World::default();
     world.add_object(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
     world.add_object(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add_object(Box::new(Sphere::new(Point3::new(1.0, -0.1, -1.0), 0.2)));
 
     let origin = Point3::new(0.0, 0.0, 0.0);
     let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
