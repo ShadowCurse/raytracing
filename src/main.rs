@@ -3,32 +3,30 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 
+mod hittable;
 mod ray;
+mod sphere;
 mod vec3;
+mod world;
 
+use crate::hittable::Hittable;
 use ray::*;
+use sphere::*;
 use vec3::*;
+use world::*;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 400;
+const SCREEN_WIDTH: u32 = 1280;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
 const BUFFER_LENGTH: u32 = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 const PITCH: u32 = SCREEN_WIDTH * 3;
 
-fn hit_sphere(center: &Point3, radius: f32, ray: &Ray) -> bool {
-    let os = ray.origin - *center;
-    let a = ray.direction.dot(&ray.direction);
-    let b = os.dot(&ray.direction) * 2.0;
-    let c = os.dot(&os) - radius * radius;
-    (b * b - 4.0 * a * c) > 0.0
-}
-
-fn ray_color(ray: &Ray) -> Color {
-    if hit_sphere(&Point3::new(0.0, 0.0, 1.0), 0.2, &ray) {
-        return Color::new(1.0, 0.0, 0.0);
+fn ray_color(ray: &Ray, world: &World) -> Color {
+    if let Some(record) = world.hit(&ray, 0.0, f32::INFINITY) {
+        return (record.normal + Color::new(1.0, 1.0, 1.0)) * 0.5;
     }
     let unit_direction = ray.direction.unit();
-    let t = 0.5 * (-unit_direction.y + 1.0);
+    let t = 0.5 * (unit_direction.y + 1.0);
     Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
 }
 
@@ -36,6 +34,10 @@ fn create_texture() -> Vec<u8> {
     let viewport_height = 2.0;
     let viewport_width = ASPECT_RATIO * viewport_height;
     let focal_length = 1.0;
+
+    let mut world = World::default();
+    world.add_object(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.add_object(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
 
     let origin = Point3::new(0.0, 0.0, 0.0);
     let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
@@ -51,9 +53,9 @@ fn create_texture() -> Vec<u8> {
 
             let dir = lower_left_corner + horizontal * u + vertical * v - origin;
             let r = Ray::new(origin, dir);
-            let color = ray_color(&r);
+            let color = ray_color(&r, &world);
 
-            let offset = y as usize * PITCH as usize + x as usize * 3;
+            let offset = (SCREEN_HEIGHT - 1 - y) as usize * PITCH as usize + x as usize * 3; // for OpenGl reverse y coord
             buffer[offset] = (255.999 * color.x) as u8;
             buffer[offset + 1] = (255.999 * color.y) as u8;
             buffer[offset + 2] = (255.999 * color.z) as u8;
