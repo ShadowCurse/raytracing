@@ -20,7 +20,7 @@ impl Vec3 {
     }
 
     pub fn length_squared(&self) -> f32 {
-        self.x.sqrt() + self.y.sqrt() + self.z.sqrt()
+        self.x.powi(2) + self.y.powi(2) + self.z.powi(2)
     }
 
     pub fn unit(&self) -> Self {
