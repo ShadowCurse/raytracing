@@ -1,3 +1,4 @@
+use rand::distributions::Distribution;
 use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 pub type Point3 = Vec3;
@@ -13,6 +14,16 @@ pub struct Vec3 {
 impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn random(min: f32, max: f32) -> Self {
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::new(min, max);
+        Self {
+            x: uniform.sample(&mut rng),
+            y: uniform.sample(&mut rng),
+            z: uniform.sample(&mut rng),
+        }
     }
 
     pub fn length(&self) -> f32 {

@@ -1,7 +1,6 @@
 use crate::hittable::*;
 use crate::ray::*;
 use crate::vec3::*;
-use sdl2::event::WindowEvent::HitTest;
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Sphere {
@@ -22,7 +21,7 @@ impl Hittable for Sphere {
         let half_b = os.dot(&ray.direction);
         let c = os.length_squared() - self.radius * self.radius;
 
-        let discriminant = (half_b * half_b - a * c);
+        let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 {
             return None;
         }
