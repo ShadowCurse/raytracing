@@ -1,11 +1,7 @@
-use rand::{
-    distributions::{Distribution, Uniform},
-    Rng,
-};
+use rand::distributions::Distribution;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
 
 mod camera;
 mod hittable;
@@ -26,11 +22,30 @@ const SCREEN_WIDTH: u32 = 1280;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
 const BUFFER_LENGTH: u32 = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
 const PITCH: u32 = SCREEN_WIDTH * 3;
-const SAMPLES_PER_PIXEL: u32 = 10;
+const SAMPLES_PER_PIXEL: u32 = 100;
+const MAX_DEPTH: u32 = 50;
 
-fn ray_color(ray: &Ray, world: &World) -> Color {
-    if let Some(record) = world.hit(&ray, 0.0, f32::INFINITY) {
-        return 0.5 * (record.normal + Color::new(1.0, 1.0, 1.0));
+fn random_unit_vector() -> Vec3 {
+    loop {
+        let point = Vec3::random(-1.0, 1.0);
+        if point.length_squared() < 1.0 {
+            return point.unit();
+        }
+    }
+}
+
+fn ray_color(ray: &Ray, world: &World, depth: u32) -> Color {
+    if depth == 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+    if let Some(record) = world.hit(&ray, 0.001, f32::INFINITY) {
+        let target = record.point + record.normal + random_unit_vector();
+        return 0.5
+            * ray_color(
+                &Ray::new(record.point, target - record.point),
+                world,
+                depth - 1,
+            );
     }
     let unit_direction = ray.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
@@ -38,9 +53,9 @@ fn ray_color(ray: &Ray, world: &World) -> Color {
 }
 
 fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pixel: u32) {
-    let r = color.x / samples_per_pixel as f32;
-    let g = color.y / samples_per_pixel as f32;
-    let b = color.z / samples_per_pixel as f32;
+    let r = (color.x / samples_per_pixel as f32).sqrt();
+    let g = (color.y / samples_per_pixel as f32).sqrt();
+    let b = (color.z / samples_per_pixel as f32).sqrt();
 
     let offset = (SCREEN_HEIGHT - 1 - y) as usize * PITCH as usize + x as usize * 3; // for OpenGl reverse y coord
     buffer[offset] = (255.999 * r.clamp(0.0, 0.999)) as u8;
@@ -57,7 +72,7 @@ fn create_texture() -> Vec<u8> {
 
     let mut buffer = vec![0u8; BUFFER_LENGTH as usize];
     let mut rng = rand::thread_rng();
-    let mut uniform = rand::distributions::Uniform::new(0.0, 1.0);
+    let uniform = rand::distributions::Uniform::new(0.0, 1.0);
     for y in 0..SCREEN_HEIGHT {
         for x in 0..SCREEN_WIDTH {
             let mut color = Color::new(0.0, 0.0, 0.0);
@@ -65,10 +80,11 @@ fn create_texture() -> Vec<u8> {
                 let u = (x as f32 + uniform.sample(&mut rng)) / (SCREEN_WIDTH - 1) as f32;
                 let v = (y as f32 + uniform.sample(&mut rng)) / (SCREEN_HEIGHT - 1) as f32;
                 let r = camera.get_ray(u, v);
-                color += ray_color(&r, &world);
+                color += ray_color(&r, &world, MAX_DEPTH);
             }
             write_pixel(&mut buffer, x, y, &color, SAMPLES_PER_PIXEL);
         }
+        println!("Progress: {}%", y as f32 * 100.0 / SCREEN_HEIGHT as f32);
     }
     buffer
 }
@@ -96,7 +112,7 @@ pub fn main() -> Result<(), String> {
     let delta = std::time::Instant::now() - now;
     println!("Texture created in {}ms", delta.as_millis());
 
-    texture.update(None, &buffer, PITCH as usize);
+    texture.update(None, &buffer, PITCH as usize).unwrap();
 
     canvas.clear();
     canvas.copy(&texture, None, None)?;
