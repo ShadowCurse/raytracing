@@ -2,16 +2,19 @@ use rand::distributions::Distribution;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
+use std::rc::Rc;
 
 mod camera;
 mod hittable;
+mod material;
 mod ray;
 mod sphere;
 mod vec3;
 mod world;
 
-use crate::hittable::Hittable;
 use camera::*;
+use hittable::*;
+use material::*;
 use ray::*;
 use sphere::*;
 use vec3::*;
@@ -25,27 +28,16 @@ const PITCH: u32 = SCREEN_WIDTH * 3;
 const SAMPLES_PER_PIXEL: u32 = 100;
 const MAX_DEPTH: u32 = 50;
 
-fn random_unit_vector() -> Vec3 {
-    loop {
-        let point = Vec3::random(-1.0, 1.0);
-        if point.length_squared() < 1.0 {
-            return point.unit();
-        }
-    }
-}
-
 fn ray_color(ray: &Ray, world: &World, depth: u32) -> Color {
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
-    if let Some(record) = world.hit(&ray, 0.001, f32::INFINITY) {
-        let target = record.point + record.normal + random_unit_vector();
-        return 0.5
-            * ray_color(
-                &Ray::new(record.point, target - record.point),
-                world,
-                depth - 1,
-            );
+    if let Some(hit) = world.hit(&ray, 0.001, f32::INFINITY) {
+        return if let Some((scatter_ray, scatter_color)) = hit.scatter(ray) {
+            scatter_color * ray_color(&scatter_ray, world, depth - 1)
+        } else {
+            Color::new(0.0, 0.0, 0.0)
+        };
     }
     let unit_direction = ray.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
@@ -64,9 +56,40 @@ fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pix
 }
 
 fn create_texture() -> Vec<u8> {
+    let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian {
+        albedo: Color::new(0.8, 0.8, 0.0),
+    }));
+    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian {
+        albedo: Color::new(0.7, 0.3, 0.3),
+    }));
+    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal {
+        albedo: Color::new(0.8, 0.8, 0.8),
+    }));
+    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal {
+        albedo: Color::new(0.8, 0.6, 0.2),
+    }));
+
     let mut world = World::default();
-    world.add_object(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
-    world.add_object(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add_object(Box::new(Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground.clone(),
+    )));
+    world.add_object(Box::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left.clone(),
+    )));
+    world.add_object(Box::new(Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right.clone(),
+    )));
+    world.add_object(Box::new(Sphere::new(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+        material_center.clone(),
+    )));
 
     let camera = Camera::new(ASPECT_RATIO);
 
