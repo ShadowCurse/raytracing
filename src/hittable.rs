@@ -1,10 +1,13 @@
+use crate::material::*;
 use crate::ray::*;
 use crate::vec3::*;
+use std::rc::Rc;
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Default)]
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
+    pub material: Option<Rc<Box<dyn Material>>>,
     pub t: f32,
     pub front_face: bool,
 }
@@ -17,6 +20,13 @@ impl HitRecord {
         } else {
             -*outward_normal
         };
+    }
+
+    pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color)> {
+        self.material
+            .as_ref()
+            .unwrap()
+            .scatter(ray, &self.point, &self.normal)
     }
 }
 

@@ -26,17 +26,35 @@ impl Vec3 {
         }
     }
 
+    pub fn random_unit() -> Self {
+        loop {
+            let point = Vec3::random(-1.0, 1.0);
+            if point.length_squared() < 1.0 {
+                return point.unit();
+            }
+        }
+    }
+
     pub fn length(&self) -> f32 {
-        f32::sqrt(self.x.powi(2) + self.y.powi(2) + self.z.powi(2))
+        self.length_squared().sqrt()
     }
 
     pub fn length_squared(&self) -> f32 {
         self.x.powi(2) + self.y.powi(2) + self.z.powi(2)
     }
 
-    pub fn unit(&self) -> Self {
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        (self.x < s) && (self.y < s) && (self.z < s)
+    }
+
+    pub fn unit(self) -> Self {
         let length = self.length();
-        *self / length
+        self / length
+    }
+
+    pub fn reflect(self, normal: &Self) -> Self {
+        self - 2.0 * self.dot(normal) * normal
     }
 
     pub fn dot(&self, rhs: &Self) -> f32 {
@@ -76,6 +94,18 @@ impl Add for Vec3 {
     }
 }
 
+impl Add<Vec3> for &Vec3 {
+    type Output = Vec3;
+
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Self::Output {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
@@ -108,6 +138,18 @@ impl Mul<Vec3> for f32 {
     }
 }
 
+impl Mul<&Vec3> for f32 {
+    type Output = Vec3;
+
+    fn mul(self, value: &Vec3) -> Self::Output {
+        Self::Output {
+            x: value.x * self,
+            y: value.y * self,
+            z: value.z * self,
+        }
+    }
+}
+
 impl Mul<f32> for Vec3 {
     type Output = Self;
 
@@ -116,6 +158,18 @@ impl Mul<f32> for Vec3 {
             x: self.x * value,
             y: self.y * value,
             z: self.z * value,
+        }
+    }
+}
+
+impl Mul<Vec3> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, value: Self) -> Self::Output {
+        Self {
+            x: self.x * value.x,
+            y: self.y * value.y,
+            z: self.z * value.z,
         }
     }
 }
