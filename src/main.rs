@@ -56,18 +56,14 @@ fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pix
 }
 
 fn create_texture() -> Vec<u8> {
-    let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian {
-        albedo: Color::new(0.8, 0.8, 0.0),
-    }));
-    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian {
-        albedo: Color::new(0.7, 0.3, 0.3),
-    }));
-    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal {
-        albedo: Color::new(0.8, 0.8, 0.8),
-    }));
-    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal {
-        albedo: Color::new(0.8, 0.6, 0.2),
-    }));
+    let material_ground: Rc<Box<dyn Material>> =
+        Rc::new(Box::new(Lambertian::new(Color::new(0.8, 0.8, 0.0))));
+    let material_center: Rc<Box<dyn Material>> =
+        Rc::new(Box::new(Lambertian::new(Color::new(0.7, 0.3, 0.3))));
+    let material_left: Rc<Box<dyn Material>> =
+        Rc::new(Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3)));
+    let material_right: Rc<Box<dyn Material>> =
+        Rc::new(Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0)));
 
     let mut world = World::default();
     world.add_object(Box::new(Sphere::new(
