@@ -7,7 +7,7 @@ use std::rc::Rc;
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
-    pub material: Option<Rc<Box<dyn Material>>>,
+    pub material: Option<Rc<dyn Material>>,
     pub t: f32,
     pub front_face: bool,
 }

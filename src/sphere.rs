@@ -7,11 +7,11 @@ use std::rc::Rc;
 pub struct Sphere {
     pub center: Point3,
     pub radius: f32,
-    pub material: Rc<Box<dyn Material>>,
+    pub material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Rc<Box<dyn Material>>) -> Self {
+    pub fn new(center: Point3, radius: f32, material: Rc<dyn Material>) -> Self {
         Self {
             center,
             radius,
