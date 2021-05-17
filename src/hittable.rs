@@ -23,10 +23,7 @@ impl HitRecord {
     }
 
     pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color)> {
-        self.material
-            .as_ref()
-            .unwrap()
-            .scatter(ray, &self.point, &self.normal)
+        self.material.as_ref().unwrap().scatter(ray, &self)
     }
 }
 
