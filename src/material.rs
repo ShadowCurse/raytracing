@@ -1,6 +1,7 @@
 use crate::hittable::HitRecord;
 use crate::ray::*;
 use crate::vec3::*;
+use rand::Rng;
 
 pub trait Material {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)>;
@@ -66,6 +67,10 @@ impl Dielectric {
             index_of_refraction,
         }
     }
+    fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
+        let r0 = ((1.0 - ref_idx) / (1.0 + ref_idx)).powi(2);
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+    }
 }
 
 impl Material for Dielectric {
@@ -75,13 +80,22 @@ impl Material for Dielectric {
         } else {
             self.index_of_refraction
         };
-        let refracted = ray
-            .direction
-            .unit()
-            .refract(&hit_record.normal, refraction_ratio);
+        let unit_direction = ray.direction.unit();
+        let cos_theta = (-unit_direction).dot(&hit_record.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
 
+        let mut rng = rand::thread_rng();
+        let direction = if refraction_ratio * sin_theta > 1.0
+            || Self::reflectance(cos_theta, refraction_ratio) > rng.gen()
+        {
+            // can not refract
+            unit_direction.reflect(&hit_record.normal)
+        } else {
+            // can refract
+            unit_direction.refract(&hit_record.normal, refraction_ratio)
+        };
         Some((
-            Ray::new(hit_record.point, refracted),
+            Ray::new(hit_record.point, direction),
             Color::new(1.0, 1.0, 1.0),
         ))
     }
