@@ -142,6 +142,18 @@ impl Sub for Vec3 {
     }
 }
 
+impl Sub<&Vec3> for &Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, rhs: &Vec3) -> Self::Output {
+        Self::Output {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
 impl Mul<Vec3> for f32 {
     type Output = Vec3;
 
