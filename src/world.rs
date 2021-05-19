@@ -16,11 +16,11 @@ impl Hittable for World {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut last_record = HitRecord::default();
         let mut hit_anything = false;
-        // let mut closest = t_max;
+        let mut closest = t_max;
         for obj in self.objects.iter() {
-            if let Some(record) = obj.hit(&ray, t_min, t_max) {
+            if let Some(record) = obj.hit(&ray, t_min, closest) {
                 hit_anything = true;
-                // closest = record.t;
+                closest = record.t;
                 last_record = record;
             }
         }
