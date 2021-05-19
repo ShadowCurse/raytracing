@@ -26,6 +26,16 @@ impl Vec3 {
         }
     }
 
+    pub fn random_vec2(min: f32, max: f32) -> Self {
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::new(min, max);
+        Self {
+            x: uniform.sample(&mut rng),
+            y: uniform.sample(&mut rng),
+            z: 0.0,
+        }
+    }
+
     pub fn random_unit() -> Self {
         loop {
             let point = Vec3::random(-1.0, 1.0);
@@ -38,6 +48,15 @@ impl Vec3 {
     pub fn random_in_unit_sphere() -> Self {
         loop {
             let point = Vec3::random(-1.0, 1.0);
+            if point.length_squared() < 1.0 {
+                return point;
+            }
+        }
+    }
+
+    pub fn random_in_unit_disk() -> Self {
+        loop {
+            let point = Vec3::random_vec2(-1.0, 1.0);
             if point.length_squared() < 1.0 {
                 return point;
             }

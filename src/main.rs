@@ -56,41 +56,76 @@ fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pix
 }
 
 fn create_texture() -> Vec<u8> {
-    let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let material_center = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let material_left = Rc::new(Dielectric::new(1.5));
-    let material_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.5));
-
-    let R = (std::f32::consts::PI / 4.0).cos();
-
     let mut world = World::default();
+
+    let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     world.add_object(Box::new(Sphere::new(
-        Point3::new(0.0, -100.5, -1.0),
-        100.0,
-        material_ground.clone(),
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        material_ground,
     )));
+
+    let mut rng = rand::thread_rng();
+    let uniform = rand::distributions::Uniform::new(0.0, 1.0);
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = uniform.sample(&mut rng);
+            let center = Point3::new(
+                a as f32 + 0.9 * uniform.sample(&mut rng),
+                0.2,
+                b as f32 + 0.9 * uniform.sample(&mut rng),
+            );
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                if choose_mat < 0.8 {
+                    let material_lambertian = Rc::new(Lambertian::new(Color::random(0.0, 0.1)));
+                    world.add_object(Box::new(Sphere::new(center, 0.2, material_lambertian)));
+                } else if choose_mat < 0.95 {
+                    let material_metal = Rc::new(Metal::new(
+                        Color::random(0.5, 1.0),
+                        uniform.sample(&mut rng),
+                    ));
+                    world.add_object(Box::new(Sphere::new(center, 0.2, material_metal)));
+                } else {
+                    let material_dielectric = Rc::new(Dielectric::new(1.5));
+                    world.add_object(Box::new(Sphere::new(center, 0.2, material_dielectric)));
+                }
+            }
+        }
+    }
+
+    let material_left = Rc::new(Dielectric::new(1.5));
     world.add_object(Box::new(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        R,
-        material_left.clone(),
+        Point3::new(0.0, 1.0, 0.0),
+        1.0,
+        material_left,
     )));
+    let material_center = Rc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
     world.add_object(Box::new(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        R,
-        material_right.clone(),
+        Point3::new(-4.0, 1.0, 0.0),
+        1.0,
+        material_center,
     )));
+    let material_right = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add_object(Box::new(Sphere::new(
-        Point3::new(0.0, 0.0, -1.0),
-        0.5,
-        material_center.clone(),
+        Point3::new(4.0, 1.0, 0.0),
+        1.0,
+        material_right,
     )));
+
+    let look_from = Point3::new(13.0, 2.0, 3.0);
+    let look_at = Point3::new(0.0, 0.0, 0.0);
+    let v_up = Point3::new(0.0, 1.0, 0.0);
+    let dits_to_focus = 10.0; //(look_from - look_at).length();
+    let aperture = 0.1;
 
     let camera = Camera::new(
-        &Point3::new(-2.0, 2.0, 1.0),
-        &Point3::new(0.0, 0.0, -2.0),
-        &Vec3::new(0.0, 1.0, 0.0),
-        90.0,
+        &look_from,
+        &look_at,
+        &v_up,
+        20.0,
         ASPECT_RATIO,
+        aperture,
+        dits_to_focus,
     );
 
     let mut buffer = vec![0u8; BUFFER_LENGTH as usize];
@@ -137,10 +172,6 @@ pub fn main() -> Result<(), String> {
 
     texture.update(None, &buffer, PITCH as usize).unwrap();
 
-    canvas.clear();
-    canvas.copy(&texture, None, None)?;
-    canvas.present();
-
     let mut event_pump = sdl_context.event_pump()?;
 
     'running: loop {
@@ -154,6 +185,9 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
+        canvas.clear();
+        canvas.copy(&texture, None, None)?;
+        canvas.present();
     }
 
     Ok(())
