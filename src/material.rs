@@ -23,8 +23,7 @@ impl Material for Lambertian {
         if scatter_direction.near_zero() {
             scatter_direction = hit_record.normal;
         }
-        let ray = Ray::new(hit_record.point, scatter_direction);
-        Some((ray, self.albedo))
+        Some((Ray::new(hit_record.point, scatter_direction), self.albedo))
     }
 }
 

@@ -1,5 +1,5 @@
 use rand::distributions::Distribution;
-use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;
@@ -37,12 +37,12 @@ impl Vec3 {
     }
 
     pub fn random_unit() -> Self {
-        loop {
-            let point = Vec3::random(-1.0, 1.0);
-            if point.length_squared() < 1.0 {
-                return point.unit();
-            }
-        }
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::<f32>::new(-1.0, 1.0);
+        let x = uniform.sample(&mut rng);
+        let y = uniform.sample(&mut rng);
+        let z = (1.0 - x.powi(2) - y.powi(2)).sqrt();
+        Self { x, y, z }
     }
 
     pub fn random_in_unit_sphere() -> Self {
@@ -209,7 +209,55 @@ impl Mul<f32> for Vec3 {
     }
 }
 
-impl Mul<Vec3> for Vec3 {
+impl Mul<bool> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, value: bool) -> Self::Output {
+        Self {
+            x: self.x * value as u32 as f32,
+            y: self.y * value as u32 as f32,
+            z: self.z * value as u32 as f32,
+        }
+    }
+}
+
+impl Mul<bool> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, value: bool) -> Self::Output {
+        Self::Output {
+            x: self.x * value as u32 as f32,
+            y: self.y * value as u32 as f32,
+            z: self.z * value as u32 as f32,
+        }
+    }
+}
+
+impl Mul<Vec3> for bool {
+    type Output = Vec3;
+
+    fn mul(self, value: Vec3) -> Self::Output {
+        Self::Output {
+            x: value.x * self as u32 as f32,
+            y: value.y * self as u32 as f32,
+            z: value.z * self as u32 as f32,
+        }
+    }
+}
+
+impl Mul<&Vec3> for bool {
+    type Output = Vec3;
+
+    fn mul(self, value: &Vec3) -> Self::Output {
+        Self::Output {
+            x: value.x * self as u32 as f32,
+            y: value.y * self as u32 as f32,
+            z: value.z * self as u32 as f32,
+        }
+    }
+}
+
+impl Mul for Vec3 {
     type Output = Self;
 
     fn mul(self, value: Self) -> Self::Output {
@@ -218,6 +266,14 @@ impl Mul<Vec3> for Vec3 {
             y: self.y * value.y,
             z: self.z * value.z,
         }
+    }
+}
+
+impl MulAssign for Vec3 {
+    fn mul_assign(&mut self, rhs: Self) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
     }
 }
 

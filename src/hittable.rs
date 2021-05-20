@@ -4,26 +4,28 @@ use crate::vec3::*;
 use std::rc::Rc;
 
 #[derive(Default)]
-pub struct HitRecord {
+pub struct HitRecord<'a> {
     pub point: Point3,
     pub normal: Vec3,
-    pub material: Option<Rc<dyn Material>>,
+    pub material: Option<&'a Rc<dyn Material>>,
     pub t: f32,
     pub front_face: bool,
 }
 
-impl HitRecord {
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
-        self.front_face = ray.direction.dot(&outward_normal) < 0.0;
-        self.normal = if self.front_face {
-            *outward_normal
-        } else {
-            -*outward_normal
-        };
+impl<'a> HitRecord<'a> {
+    pub fn new(point: Point3, t: f32, material: &'a Rc<dyn Material>, ray: &Ray, outward_normal: &Vec3) -> Self {
+        let front_face = ray.direction.dot(&outward_normal) < 0.0;
+        Self {
+            point,
+            normal: front_face * outward_normal,
+            material: Some(material),
+            t,
+            front_face,
+        }
     }
 
     pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color)> {
-        self.material.as_ref().unwrap().scatter(ray, &self)
+        self.material.unwrap().scatter(ray, &self)
     }
 }
 

@@ -28,20 +28,45 @@ const PITCH: u32 = SCREEN_WIDTH * 3;
 const SAMPLES_PER_PIXEL: u32 = 100;
 const MAX_DEPTH: u32 = 50;
 
-fn ray_color(ray: &Ray, world: &World, depth: u32) -> Color {
-    if depth == 0 {
-        return Color::new(0.0, 0.0, 0.0);
-    }
-    if let Some(hit) = world.hit(&ray, 0.001, f32::INFINITY) {
-        return if let Some((scatter_ray, scatter_color)) = hit.scatter(ray) {
-            scatter_color * ray_color(&scatter_ray, world, depth - 1)
-        } else {
-            Color::new(0.0, 0.0, 0.0)
+// fn ray_color(ray: &Ray, world: &World, depth: u32) -> Color {
+//     if depth == 0 {
+//         return Color::new(0.0, 0.0, 0.0);
+//     }
+//     if let Some(hit) = world.hit(&ray, 0.001, f32::INFINITY) {
+//         return if let Some((scatter_ray, scatter_color)) = hit.scatter(ray) {
+//             scatter_color * ray_color(&scatter_ray, world, depth - 1)
+//         } else {
+//             Color::new(0.0, 0.0, 0.0)
+//         };
+//     }
+//     let unit_direction = ray.direction.unit();
+//     let t = 0.5 * (unit_direction.y + 1.0);
+//     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+// }
+
+fn ray_color(ray: &Ray, world: &World, max_depth: u32) -> Color {
+    let mut final_color = Color::new(1.0, 1.0, 1.0);
+    let mut current_ray = *ray;
+    let mut curr_depth: u32 = 0;
+    loop {
+        curr_depth += 1;
+        if curr_depth == max_depth {
+            return Color::new(0.0, 0.0, 0.0);
         };
+        if let Some(hit) = world.hit(&current_ray, 0.001, f32::INFINITY) {
+            if let Some((scatter_ray, scatter_color)) = hit.scatter(&current_ray) {
+                current_ray = scatter_ray;
+                final_color *= scatter_color;
+            } else {
+                return Color::new(0.0, 0.0, 0.0);
+            }
+        } else {
+            break;
+        }
     }
-    let unit_direction = ray.direction.unit();
+    let unit_direction = current_ray.direction.unit();
     let t = 0.5 * (unit_direction.y + 1.0);
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+    final_color * ((1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0))
 }
 
 fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pixel: u32) {
@@ -58,40 +83,40 @@ fn write_pixel(buffer: &mut [u8], x: u32, y: u32, color: &Color, samples_per_pix
 fn create_texture() -> Vec<u8> {
     let mut world = World::default();
 
-    let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_ground = Rc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
     world.add_object(Box::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         material_ground,
     )));
 
-    let mut rng = rand::thread_rng();
-    let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = uniform.sample(&mut rng);
-            let center = Point3::new(
-                a as f32 + 0.9 * uniform.sample(&mut rng),
-                0.2,
-                b as f32 + 0.9 * uniform.sample(&mut rng),
-            );
-            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
-                    let material_lambertian = Rc::new(Lambertian::new(Color::random(0.0, 0.1)));
-                    world.add_object(Box::new(Sphere::new(center, 0.2, material_lambertian)));
-                } else if choose_mat < 0.95 {
-                    let material_metal = Rc::new(Metal::new(
-                        Color::random(0.5, 1.0),
-                        uniform.sample(&mut rng),
-                    ));
-                    world.add_object(Box::new(Sphere::new(center, 0.2, material_metal)));
-                } else {
-                    let material_dielectric = Rc::new(Dielectric::new(1.5));
-                    world.add_object(Box::new(Sphere::new(center, 0.2, material_dielectric)));
-                }
-            }
-        }
-    }
+    // let mut rng = rand::thread_rng();
+    // let uniform = rand::distributions::Uniform::new(0.0, 1.0);
+    // for a in -11..11 {
+    //     for b in -11..11 {
+    //         let choose_mat = uniform.sample(&mut rng);
+    //         let center = Point3::new(
+    //             a as f32 + 0.9 * uniform.sample(&mut rng),
+    //             0.2,
+    //             b as f32 + 0.9 * uniform.sample(&mut rng),
+    //         );
+    //         if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+    //             if choose_mat < 0.8 {
+    //                 let material_lambertian = Rc::new(Lambertian::new(Color::random(0.0, 0.1)));
+    //                 world.add_object(Box::new(Sphere::new(center, 0.2, material_lambertian)));
+    //             } else if choose_mat < 0.95 {
+    //                 let material_metal = Rc::new(Metal::new(
+    //                     Color::random(0.5, 1.0),
+    //                     uniform.sample(&mut rng),
+    //                 ));
+    //                 world.add_object(Box::new(Sphere::new(center, 0.2, material_metal)));
+    //             } else {
+    //                 let material_dielectric = Rc::new(Dielectric::new(1.5));
+    //                 world.add_object(Box::new(Sphere::new(center, 0.2, material_dielectric)));
+    //             }
+    //         }
+    //     }
+    // }
 
     let material_left = Rc::new(Dielectric::new(1.5));
     world.add_object(Box::new(Sphere::new(

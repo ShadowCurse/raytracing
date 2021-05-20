@@ -25,9 +25,9 @@ impl Hittable for Sphere {
         let os = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = os.dot(&ray.direction);
-        let c = os.length_squared() - self.radius * self.radius;
+        let c = os.length_squared() - self.radius.powi(2);
 
-        let discriminant = half_b * half_b - a * c;
+        let discriminant = half_b.powi(2) - a * c;
         if discriminant < 0.0 {
             return None;
         }
@@ -43,13 +43,12 @@ impl Hittable for Sphere {
 
         let point = ray.at(root);
         let outward_normal = (point - self.center) / self.radius;
-        let mut record = HitRecord {
+        Some(HitRecord::new(
             point,
-            t: root,
-            material: Some(self.material.clone()),
-            ..Default::default()
-        };
-        record.set_face_normal(&ray, &outward_normal);
-        Some(record)
+            root,
+            &self.material,
+            &ray,
+            &outward_normal,
+        ))
     }
 }
