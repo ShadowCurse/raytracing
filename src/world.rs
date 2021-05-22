@@ -1,14 +1,13 @@
-use crate::vec3::*;
 use crate::hittable::*;
 use crate::ray::*;
 
 #[derive(Default)]
 pub struct World {
-    pub objects: Vec<Box<dyn Hittable>>,
+    pub objects: Vec<Box<WithHittableTrait>>,
 }
 
 impl World {
-    pub fn add_object(&mut self, object: Box<dyn Hittable>) {
+    pub fn add_object(&mut self, object: Box<WithHittableTrait>) {
         self.objects.push(object);
     }
 }

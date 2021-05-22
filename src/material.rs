@@ -1,9 +1,12 @@
 use crate::hittable::HitRecord;
 use crate::ray::*;
 use crate::vec3::*;
+
 use rand::Rng;
 
-pub trait Material {
+pub type WithMaterialTrait = dyn Material + Sync + Send;
+
+pub trait Material: Sync + Send {
     fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)>;
 }
 

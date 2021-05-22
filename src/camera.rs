@@ -47,11 +47,13 @@ impl Camera {
         }
     }
 
+    // TODO fix camera for batch rendering
     pub fn get_ray(&self, x: f32, y: f32) -> Ray {
         let rd = self.lens_radius * Vec3::random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
 
-        let dir = self.lower_left_corner + x * self.horizontal + y * self.vertical - self.origin - offset;
+        let dir =
+            self.lower_left_corner + x * self.horizontal + y * self.vertical - self.origin - offset;
         Ray::new(self.origin + offset, dir)
     }
 }

@@ -2,16 +2,18 @@ use crate::hittable::*;
 use crate::material::*;
 use crate::ray::*;
 use crate::vec3::*;
-use std::rc::Rc;
+
+use std::borrow::Borrow;
+use std::sync::Arc;
 
 pub struct Sphere {
     pub center: Point3,
     pub radius: f32,
-    pub material: Rc<dyn Material>,
+    pub material: Arc<WithMaterialTrait>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Rc<dyn Material>) -> Self {
+    pub fn new(center: Point3, radius: f32, material: Arc<WithMaterialTrait>) -> Self {
         Self {
             center,
             radius,
@@ -46,7 +48,7 @@ impl Hittable for Sphere {
         Some(HitRecord::new(
             point,
             root,
-            &self.material,
+            self.material.borrow(),
             &ray,
             &outward_normal,
         ))
