@@ -39,6 +39,7 @@ impl<'a> Renderer {
         let tile_height = self.screen_height / thread_num;
 
         let screen_width = self.screen_width;
+        let screen_height = self.screen_height;
         let samples_per_pixel = self.samples_per_pixel;
         let max_depth = self.max_depth;
 
@@ -49,14 +50,14 @@ impl<'a> Renderer {
                 .chunks_mut((tile_height * screen_width * 3) as usize)
                 .enumerate()
                 .map(|(i, buff)| {
-                    // TODO fix ordering of buffers
-                    let bottom = i as u32 * tile_height;
+                    let bottom = ((thread_num - 1) - i as u32) * tile_height;
                     let top = bottom + tile_height;
                     spawner.spawn(move |_| {
                         Self::render_tile(
                             buff,
                             (0, top),
                             (screen_width, bottom),
+                            (screen_width, screen_height),
                             world,
                             camera,
                             samples_per_pixel,
@@ -166,6 +167,7 @@ impl<'a> Renderer {
         buffer: &mut [u8],
         top_left: (u32, u32),
         bot_right: (u32, u32),
+        window_size: (u32, u32),
         world: &'a World,
         camera: &Camera,
         samples_per_pixel: u32,
@@ -178,14 +180,12 @@ impl<'a> Renderer {
         );
         let mut rng = rand::thread_rng();
         let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-        let width = bot_right.0 - top_left.0;
-        let height = top_left.1 - bot_right.1;
         (bot_right.1..top_left.1).for_each(move |y| {
             (top_left.0..bot_right.0).for_each(|x| {
                 let mut color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..samples_per_pixel {
-                    let u = (x as f32 + uniform.sample(&mut rng)) / (width - 1) as f32;
-                    let v = (y as f32 + uniform.sample(&mut rng)) / (height - 1) as f32;
+                    let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
+                    let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
                     color += Self::ray_color(&r, &world, max_depth);
                 }
