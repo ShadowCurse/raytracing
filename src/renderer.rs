@@ -72,25 +72,6 @@ impl<'a> Renderer {
         let delta = std::time::Instant::now() - now;
         println!("Texture created in {}ms", delta.as_millis());
         Ok(())
-
-        // let mut rng = rand::thread_rng();
-        // let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-        // for y in 0..self.screen_height {
-        //     for x in 0..self.screen_width {
-        //         let mut color = Color::new(0.0, 0.0, 0.0);
-        //         for _ in 0..self.samples_per_pixel {
-        //             let u = (x as f32 + uniform.sample(&mut rng)) / (self.screen_width - 1) as f32;
-        //             let v = (y as f32 + uniform.sample(&mut rng)) / (self.screen_height - 1) as f32;
-        //             let r = camera.get_ray(u, v);
-        //             color += Self::ray_color(&r, &world, self.max_depth);
-        //         }
-        //         Self::write_pixel(&mut self.buffer, (0, 720), (1280, 0), x, y, &color, self.samples_per_pixel);
-        //     }
-        //     println!(
-        //         "Progress: {}%",
-        //         y as f32 * 100.0 / self.screen_height as f32
-        //     );
-        // }
     }
 
     pub fn present(&mut self) -> Result<(), String> {
