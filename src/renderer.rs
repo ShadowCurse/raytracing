@@ -35,7 +35,7 @@ impl<'a> Renderer {
     }
 
     pub fn render(&mut self, world: &World, camera: &Camera) -> Result<(), String> {
-        let thread_num = 3;
+        let thread_num = 15;
         let tile_height = self.screen_height / thread_num;
 
         let screen_width = self.screen_width;
