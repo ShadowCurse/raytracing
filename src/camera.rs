@@ -10,6 +10,8 @@ pub struct Camera {
     pub v: Vec3,
     pub w: Vec3,
     pub lens_radius: f32,
+    pub time0: f32,
+    pub time1: f32,
 }
 
 impl Camera {
@@ -21,6 +23,8 @@ impl Camera {
         aspect_ratio: f32,
         aperture: f32,
         focus_dist: f32,
+        time0: f32,
+        time1: f32,
     ) -> Self {
         let theta = vfov.to_radians();
         let h = (theta / 2.0).tan();
@@ -44,6 +48,8 @@ impl Camera {
             v,
             w,
             lens_radius: aperture / 2.0,
+            time0,
+            time1,
         }
     }
 
@@ -53,6 +59,10 @@ impl Camera {
 
         let dir =
             self.lower_left_corner + x * self.horizontal + y * self.vertical - self.origin - offset;
-        Ray::new(self.origin + offset, dir)
+
+        use rand::distributions::Distribution;
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::new(self.time0, self.time1);
+        Ray::new(self.origin + offset, dir, uniform.sample(&mut rng))
     }
 }
