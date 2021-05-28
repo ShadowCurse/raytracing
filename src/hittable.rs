@@ -1,6 +1,7 @@
 use crate::material::*;
 use crate::ray::*;
 use crate::vec3::*;
+use crate::aabb::*;
 
 #[derive(Default)]
 pub struct HitRecord<'a> {
@@ -38,4 +39,5 @@ pub type WithHittableTrait = dyn Hittable + Send + Sync;
 
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB>;
 }

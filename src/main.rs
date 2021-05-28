@@ -6,6 +6,7 @@ mod renderer;
 mod sphere;
 mod vec3;
 mod world;
+mod aabb;
 
 use camera::*;
 use material::*;
@@ -13,6 +14,7 @@ use renderer::*;
 use sphere::*;
 use vec3::*;
 use world::*;
+use aabb::*;
 
 use std::sync::Arc;
 

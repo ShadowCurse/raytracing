@@ -3,6 +3,7 @@ use crate::material::*;
 use crate::ray::*;
 use crate::vec3::*;
 
+use crate::aabb::AABB;
 use std::borrow::Borrow;
 use std::sync::Arc;
 
@@ -51,6 +52,13 @@ impl Hittable for Sphere {
             self.material.borrow(),
             &ray,
             &outward_normal,
+        ))
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
         ))
     }
 }
@@ -118,5 +126,17 @@ impl Hittable for MovingSphere {
             &ray,
             &outward_normal,
         ))
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
+        let box0 = AABB::new(
+            self.center(time0) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time0) - Vec3::new(self.radius, self.radius, self.radius),
+        );
+        let box1 = AABB::new(
+            self.center(time1) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time1) - Vec3::new(self.radius, self.radius, self.radius),
+        );
+        Some(AABB::surrounding_box(box0, box1))
     }
 }
