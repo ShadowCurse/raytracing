@@ -1,3 +1,5 @@
+mod aabb;
+mod bvh;
 mod camera;
 mod hittable;
 mod material;
@@ -6,7 +8,6 @@ mod renderer;
 mod sphere;
 mod vec3;
 mod world;
-mod aabb;
 
 use camera::*;
 use material::*;
@@ -14,21 +15,21 @@ use renderer::*;
 use sphere::*;
 use vec3::*;
 use world::*;
-use aabb::*;
 
 use std::sync::Arc;
+use crate::bvh::BVHNode;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const SCREEN_WIDTH: u32 = 400;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 100;
-const MAX_DEPTH: u32 = 50;
+const SAMPLES_PER_PIXEL: u32 = 20;
+const MAX_DEPTH: u32 = 5;
 
 pub fn main() -> Result<(), String> {
     let mut world = World::default();
 
     let material_ground = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.add_object(Box::new(Sphere::new(
+    world.add_object(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         material_ground,
@@ -37,7 +38,7 @@ pub fn main() -> Result<(), String> {
     use rand::distributions::Distribution;
     let mut rng = rand::thread_rng();
     let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-    for a in -11..11 {
+    for a in -1..1 {
         for b in -11..11 {
             let choose_mat = uniform.sample(&mut rng);
             let center = Point3::new(
@@ -51,7 +52,7 @@ pub fn main() -> Result<(), String> {
                     let mut rng = rand::thread_rng();
                     let uniform = rand::distributions::Uniform::new(0.0, 0.5);
                     let center2 = center + Vec3::new(0.0, uniform.sample(&mut rng), 0.0);
-                    world.add_object(Box::new(MovingSphere::new(
+                    world.add_object(Arc::new(MovingSphere::new(
                         center,
                         center2,
                         0.0,
@@ -64,33 +65,39 @@ pub fn main() -> Result<(), String> {
                         Color::random(0.5, 1.0),
                         uniform.sample(&mut rng),
                     ));
-                    world.add_object(Box::new(Sphere::new(center, 0.2, material_metal)));
+                    world.add_object(Arc::new(Sphere::new(center, 0.2, material_metal)));
                 } else {
                     let material_dielectric = Arc::new(Dielectric::new(1.5));
-                    world.add_object(Box::new(Sphere::new(center, 0.2, material_dielectric)));
+                    world.add_object(Arc::new(Sphere::new(center, 0.2, material_dielectric)));
                 }
             }
         }
     }
 
     let material_left = Arc::new(Dielectric::new(1.5));
-    world.add_object(Box::new(Sphere::new(
+    world.add_object(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material_left,
     )));
     let material_center = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add_object(Box::new(Sphere::new(
+    world.add_object(Arc::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material_center,
     )));
     let material_right = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add_object(Box::new(Sphere::new(
+    world.add_object(Arc::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
         material_right,
     )));
+
+
+    let now = std::time::Instant::now();
+    let bvh = BVHNode::new(&world, 0.0, 1.0);
+    let delta = std::time::Instant::now() - now;
+    println!("bvh created in {}ms", delta.as_millis());
 
     let look_from = Point3::new(13.0, 2.0, 3.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
@@ -111,7 +118,7 @@ pub fn main() -> Result<(), String> {
     );
 
     let mut renderer = Renderer::new(SCREEN_WIDTH, SCREEN_HEIGHT, SAMPLES_PER_PIXEL, MAX_DEPTH)?;
-    renderer.render(&world, &camera)?;
+    renderer.render(&bvh, &camera)?;
     renderer.present()?;
     Ok(())
 }

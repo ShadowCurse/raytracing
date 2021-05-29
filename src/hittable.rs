@@ -2,6 +2,7 @@ use crate::material::*;
 use crate::ray::*;
 use crate::vec3::*;
 use crate::aabb::*;
+use std::fmt::Debug;
 
 #[derive(Default)]
 pub struct HitRecord<'a> {

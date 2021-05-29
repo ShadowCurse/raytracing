@@ -4,9 +4,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 
 use crate::camera::*;
+use crate::hittable::WithHittableTrait;
 use crate::ray::*;
 use crate::vec3::*;
-use crate::world::*;
 
 pub struct Renderer {
     screen_width: u32,
@@ -34,8 +34,8 @@ impl<'a> Renderer {
         })
     }
 
-    pub fn render(&mut self, world: &World, camera: &Camera) -> Result<(), String> {
-        let thread_num = 15;
+    pub fn render(&mut self, hittable: &WithHittableTrait, camera: &Camera) -> Result<(), String> {
+        let thread_num = 1;
         let tile_height = self.screen_height / thread_num;
 
         let screen_width = self.screen_width;
@@ -58,7 +58,7 @@ impl<'a> Renderer {
                             (0, top),
                             (screen_width, bottom),
                             (screen_width, screen_height),
-                            world,
+                            hittable,
                             camera,
                             samples_per_pixel,
                             max_depth,
@@ -119,7 +119,7 @@ impl<'a> Renderer {
         Ok(())
     }
 
-    fn ray_color(ray: &Ray, world: &World, max_depth: u32) -> Color {
+    fn ray_color(ray: &Ray, hittable: &WithHittableTrait, max_depth: u32) -> Color {
         let mut final_color = Color::new(1.0, 1.0, 1.0);
         let mut current_ray = *ray;
         let mut curr_depth: u32 = 0;
@@ -128,7 +128,7 @@ impl<'a> Renderer {
             if curr_depth == max_depth {
                 return Color::new(0.0, 0.0, 0.0);
             };
-            if let Some(hit) = world.hit(&current_ray, 0.001, f32::INFINITY) {
+            if let Some(hit) = hittable.hit(&current_ray, 0.001, f32::INFINITY) {
                 if let Some((scatter_ray, scatter_color)) = hit.scatter(&current_ray) {
                     current_ray = scatter_ray;
                     final_color *= scatter_color;
@@ -149,7 +149,7 @@ impl<'a> Renderer {
         top_left: (u32, u32),
         bot_right: (u32, u32),
         window_size: (u32, u32),
-        world: &'a World,
+        hittable: &'a WithHittableTrait,
         camera: &Camera,
         samples_per_pixel: u32,
         max_depth: u32,
@@ -163,12 +163,13 @@ impl<'a> Renderer {
         let uniform = rand::distributions::Uniform::new(0.0, 1.0);
         (bot_right.1..top_left.1).for_each(move |y| {
             (top_left.0..bot_right.0).for_each(|x| {
+                println!("x:{}, y:{}", x, y);
                 let mut color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..samples_per_pixel {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, &world, max_depth);
+                    color += Self::ray_color(&r, hittable, max_depth);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
