@@ -1,6 +1,6 @@
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
-use crate::texture::{Texture, WithTexture};
+use crate::texture::WithTexture;
 use crate::vec3::{Color, Vec3};
 
 use rand::Rng;

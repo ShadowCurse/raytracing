@@ -6,6 +6,7 @@ mod material;
 mod ray;
 mod renderer;
 mod sphere;
+mod texture;
 mod vec3;
 mod world;
 
@@ -13,6 +14,7 @@ use camera::*;
 use material::*;
 use renderer::*;
 use sphere::*;
+use texture::*;
 use vec3::*;
 use world::*;
 
@@ -27,63 +29,70 @@ const MAX_DEPTH: u32 = 50;
 pub fn main() -> Result<(), String> {
     let mut world = World::default();
 
-    let material_ground = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    let material_ground = Arc::new(Lambertian::new(Arc::new(CheckerTexture::from_colors(
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ))));
     world.add_object(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         material_ground,
     )));
 
-    use rand::distributions::Distribution;
-    let mut rng = rand::thread_rng();
-    let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = uniform.sample(&mut rng);
-            let center = Point3::new(
-                a as f32 + 0.9 * uniform.sample(&mut rng),
-                0.2,
-                b as f32 + 0.9 * uniform.sample(&mut rng),
-            );
-            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
-                    let material_lambertian = Arc::new(Lambertian::new(Color::random(0.0, 0.5)));
-                    let mut rng = rand::thread_rng();
-                    let uniform = rand::distributions::Uniform::new(0.0, 0.5);
-                    let center2 = center + Vec3::new(0.0, uniform.sample(&mut rng), 0.0);
-                    world.add_object(Arc::new(MovingSphere::new(
-                        center,
-                        center2,
-                        0.0,
-                        1.0,
-                        0.2,
-                        material_lambertian,
-                    )));
-                } else if choose_mat < 0.95 {
-                    let material_metal = Arc::new(Metal::new(
-                        Color::random(0.5, 1.0),
-                        uniform.sample(&mut rng),
-                    ));
-                    world.add_object(Arc::new(Sphere::new(center, 0.2, material_metal)));
-                } else {
-                    let material_dielectric = Arc::new(Dielectric::new(1.5));
-                    world.add_object(Arc::new(Sphere::new(center, 0.2, material_dielectric)));
-                }
-            }
-        }
-    }
+    // use rand::distributions::Distribution;
+    // let mut rng = rand::thread_rng();
+    // let uniform = rand::distributions::Uniform::new(0.0, 1.0);
+    // for a in -11..11 {
+    //     for b in -11..11 {
+    //         let choose_mat = uniform.sample(&mut rng);
+    //         let center = Point3::new(
+    //             a as f32 + 0.9 * uniform.sample(&mut rng),
+    //             0.2,
+    //             b as f32 + 0.9 * uniform.sample(&mut rng),
+    //         );
+    //         if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+    //             if choose_mat < 0.8 {
+    //                 let material_lambertian = Arc::new(Lambertian::new(Arc::new(
+    //                     SolidTexture::from_color(Color::random(0.0, 0.5)),
+    //                 )));
+    //                 let mut rng = rand::thread_rng();
+    //                 let uniform = rand::distributions::Uniform::new(0.0, 0.5);
+    //                 let center2 = center + Vec3::new(0.0, uniform.sample(&mut rng), 0.0);
+    //                 world.add_object(Arc::new(MovingSphere::new(
+    //                     center,
+    //                     center2,
+    //                     0.0,
+    //                     1.0,
+    //                     0.2,
+    //                     material_lambertian,
+    //                 )));
+    //             } else if choose_mat < 0.95 {
+    //                 let material_metal = Arc::new(Metal::new(
+    //                     Color::random(0.5, 1.0),
+    //                     uniform.sample(&mut rng),
+    //                 ));
+    //                 world.add_object(Arc::new(Sphere::new(center, 0.2, material_metal)));
+    //             } else {
+    //                 let material_dielectric = Arc::new(Dielectric::new(1.5));
+    //                 world.add_object(Arc::new(Sphere::new(center, 0.2, material_dielectric)));
+    //             }
+    //         }
+    //     }
+    // }
 
-    let material_left = Arc::new(Dielectric::new(1.5));
+    let material_center = Arc::new(Dielectric::new(1.5));
     world.add_object(Arc::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
-        material_left,
+        material_center,
     )));
-    let material_center = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    let material_left = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_color(
+        Color::new(0.4, 0.2, 0.1),
+    ))));
     world.add_object(Arc::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
-        material_center,
+        material_left,
     )));
     let material_right = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add_object(Arc::new(Sphere::new(

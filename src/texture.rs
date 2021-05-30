@@ -40,7 +40,7 @@ impl CheckerTexture {
     }
     pub fn from_colors(odd: Color, even: Color) -> Self {
         Self {
-            odd: Arc::new(SolidTexture::from_color(even)),
+            odd: Arc::new(SolidTexture::from_color(odd)),
             even: Arc::new(SolidTexture::from_color(even)),
         }
     }

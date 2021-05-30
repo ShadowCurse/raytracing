@@ -30,8 +30,8 @@ impl<'a> HitRecord<'a> {
             normal: front_face * outward_normal,
             material: Some(material),
             t,
-            u: 0.0,
-            v: 0.0,
+            u,
+            v,
             front_face,
         }
     }
