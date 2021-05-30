@@ -35,7 +35,7 @@ impl<'a> Renderer {
     }
 
     pub fn render(&mut self, hittable: &WithHittableTrait, camera: &Camera) -> Result<(), String> {
-        let thread_num = 1;
+        let thread_num = 16;
         let tile_height = self.screen_height / thread_num;
 
         let screen_width = self.screen_width;
@@ -163,7 +163,6 @@ impl<'a> Renderer {
         let uniform = rand::distributions::Uniform::new(0.0, 1.0);
         (bot_right.1..top_left.1).for_each(move |y| {
             (top_left.0..bot_right.0).for_each(|x| {
-                println!("x:{}, y:{}", x, y);
                 let mut color = Color::new(0.0, 0.0, 0.0);
                 for _ in 0..samples_per_pixel {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;

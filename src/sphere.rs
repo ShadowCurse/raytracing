@@ -1,8 +1,8 @@
 use crate::aabb::AABB;
-use crate::hittable::*;
-use crate::material::*;
-use crate::ray::*;
-use crate::vec3::*;
+use crate::hittable::{HitRecord, Hittable};
+use crate::material::WithMaterialTrait;
+use crate::ray::Ray;
+use crate::vec3::{Point3, Vec3};
 
 use std::borrow::Borrow;
 use std::sync::Arc;

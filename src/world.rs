@@ -1,6 +1,7 @@
-use crate::hittable::*;
-use crate::ray::*;
 use crate::aabb::AABB;
+use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
+use crate::ray::Ray;
+
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -35,7 +36,7 @@ impl Hittable for World {
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
         if self.objects.is_empty() {
-            return None
+            return None;
         }
         let mut output_box = AABB::default();
         for object in self.objects.iter() {

@@ -1,8 +1,7 @@
-use crate::material::*;
-use crate::ray::*;
-use crate::vec3::*;
-use crate::aabb::*;
-use std::fmt::Debug;
+use crate::aabb::AABB;
+use crate::material::WithMaterialTrait;
+use crate::ray::Ray;
+use crate::vec3::{Color, Point3, Vec3};
 
 #[derive(Default)]
 pub struct HitRecord<'a> {

@@ -17,13 +17,12 @@ use vec3::*;
 use world::*;
 
 use std::sync::Arc;
-use crate::bvh::BVHNode;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 400;
+const SCREEN_WIDTH: u32 = 1280;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 20;
-const MAX_DEPTH: u32 = 5;
+const SAMPLES_PER_PIXEL: u32 = 100;
+const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
     let mut world = World::default();
@@ -38,7 +37,7 @@ pub fn main() -> Result<(), String> {
     use rand::distributions::Distribution;
     let mut rng = rand::thread_rng();
     let uniform = rand::distributions::Uniform::new(0.0, 1.0);
-    for a in -1..1 {
+    for a in -11..11 {
         for b in -11..11 {
             let choose_mat = uniform.sample(&mut rng);
             let center = Point3::new(
@@ -93,11 +92,10 @@ pub fn main() -> Result<(), String> {
         material_right,
     )));
 
-
-    let now = std::time::Instant::now();
-    let bvh = BVHNode::new(&world, 0.0, 1.0);
-    let delta = std::time::Instant::now() - now;
-    println!("bvh created in {}ms", delta.as_millis());
+    // let now = std::time::Instant::now();
+    // let bvh = BVHNode::new(&world, 0.0, 1.0);
+    // let delta = std::time::Instant::now() - now;
+    // println!("bvh created in {}ms", delta.as_millis());
 
     let look_from = Point3::new(13.0, 2.0, 3.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
@@ -118,7 +116,7 @@ pub fn main() -> Result<(), String> {
     );
 
     let mut renderer = Renderer::new(SCREEN_WIDTH, SCREEN_HEIGHT, SAMPLES_PER_PIXEL, MAX_DEPTH)?;
-    renderer.render(&bvh, &camera)?;
+    renderer.render(&world, &camera)?;
     renderer.present()?;
     Ok(())
 }
