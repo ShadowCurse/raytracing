@@ -1,8 +1,10 @@
 use crate::hittable::HitRecord;
-use crate::ray::*;
-use crate::vec3::*;
+use crate::ray::Ray;
+use crate::texture::{Texture, WithTexture};
+use crate::vec3::{Color, Vec3};
 
 use rand::Rng;
+use std::sync::Arc;
 
 pub type WithMaterialTrait = dyn Material + Sync + Send;
 
@@ -11,11 +13,11 @@ pub trait Material: Sync + Send {
 }
 
 pub struct Lambertian {
-    pub albedo: Color,
+    pub albedo: Arc<WithTexture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Self {
+    pub fn new(albedo: Arc<WithTexture>) -> Self {
         Self { albedo }
     }
 }
@@ -28,7 +30,8 @@ impl Material for Lambertian {
         }
         Some((
             Ray::new(hit_record.point, scatter_direction, ray.time),
-            self.albedo,
+            self.albedo
+                .color(hit_record.u, hit_record.v, &hit_record.point),
         ))
     }
 }

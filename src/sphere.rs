@@ -13,6 +13,19 @@ pub struct Sphere {
     pub material: Arc<WithMaterialTrait>,
 }
 
+fn get_sphere_uv(point: &Point3) -> (f32, f32) {
+    // point: a given point on the sphere of radius one, centered atg the origin.
+    // (f32, f32) = (u, v): values [0. 1] of angle
+    // u: around the Y axis from X = -1
+    // v: from Y = -1 to Y = +1
+    use std::f32::consts::PI;
+
+    let theta = -point.y.acos();
+    let phi = -point.z.atan2(point.x) + PI;
+
+    (phi / (2.0 * PI), theta / PI)
+}
+
 impl Sphere {
     pub fn new(center: Point3, radius: f32, material: Arc<WithMaterialTrait>) -> Self {
         Self {
@@ -46,9 +59,12 @@ impl Hittable for Sphere {
 
         let point = ray.at(root);
         let outward_normal = (point - self.center) / self.radius;
+        let (u, v) = get_sphere_uv(&outward_normal);
         Some(HitRecord::new(
             point,
             root,
+            u,
+            v,
             self.material.borrow(),
             &ray,
             &outward_normal,
@@ -119,9 +135,12 @@ impl Hittable for MovingSphere {
 
         let point = ray.at(root);
         let outward_normal = (point - self.center(ray.time)) / self.radius;
+        let (u, v) = get_sphere_uv(&outward_normal);
         Some(HitRecord::new(
             point,
             root,
+            u,
+            v,
             self.material.borrow(),
             &ray,
             &outward_normal,
