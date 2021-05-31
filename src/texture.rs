@@ -1,3 +1,4 @@
+use crate::perlin::Perlin;
 use crate::vec3::{Color, Point3};
 use std::sync::Arc;
 
@@ -54,5 +55,21 @@ impl Texture for CheckerTexture {
         } else {
             self.even.color(u, v, point)
         };
+    }
+}
+
+pub struct NoiseTexture {
+    noise: Perlin,
+}
+
+impl NoiseTexture {
+    pub fn new(perlin: Perlin) -> Self {
+        Self { noise: perlin }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
+        Color::new(1.0, 1.0, 1.0) * self.noise.noise(point)
     }
 }
