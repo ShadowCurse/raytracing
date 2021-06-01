@@ -69,7 +69,7 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
+    fn color(&self, _: f32, _: f32, point: &Point3) -> Color {
         Color::new(1.0, 1.0, 1.0) * self.noise.noise(point)
     }
 }
