@@ -31,9 +31,13 @@ impl Perlin {
         // let k = ((4.0 * point.z) as i32 & 255) as usize;
         // self.random_float[(self.perm_x[i] ^ self.perm_y[j] ^ self.perm_z[k]) as usize]
 
-        let u = point.x - point.x.floor();
-        let v = point.y - point.y.floor();
-        let w = point.z - point.z.floor();
+        let mut u = point.x - point.x.floor();
+        let mut v = point.y - point.y.floor();
+        let mut w = point.z - point.z.floor();
+
+        u = u.powi(2)*(3.0 - 2.0 * u);
+        v = v.powi(2)*(3.0 - 2.0 * v);
+        w = w.powi(2)*(3.0 - 2.0 * w);
 
         let i = point.x.floor() as i32;
         let j = point.y.floor() as i32;
