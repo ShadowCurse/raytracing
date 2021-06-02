@@ -45,6 +45,18 @@ impl Perlin {
         Self::trilinear_interp(&c, u, v, w)
     }
 
+    pub fn turb(&self, point: &Point3, depth: u32) -> f32 {
+        let mut accum = 0.0;
+        let mut tmp_p = point.clone();
+        let mut weight = 1.0;
+        for _ in 0..depth {
+            accum += weight * Self::noise(self,&tmp_p);
+            weight *= 0.5;
+            tmp_p *= 2.0;
+        }
+        accum.abs()
+    }
+
     fn perlin_generate_perm() -> Vec<u32> {
         let mut p = (0..PERLIN_POINT_COUNT).map(|x| x).collect::<Vec<u32>>();
 
