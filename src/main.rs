@@ -163,7 +163,7 @@ fn two_shperes() -> World {
 fn two_perlin_spheres() -> World {
     let mut world = World::default();
 
-    let checker = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(Perlin::new()))));
+    let checker = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(4.0))));
 
     world.add_object(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
