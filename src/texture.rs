@@ -1,5 +1,6 @@
 use crate::perlin::Perlin;
 use crate::vec3::{Color, Point3};
+use image::GenericImageView;
 use std::sync::Arc;
 
 pub type WithTexture = dyn Texture + Send + Sync;
@@ -74,6 +75,48 @@ impl NoiseTexture {
 
 impl Texture for NoiseTexture {
     fn color(&self, _: f32, _: f32, point: &Point3) -> Color {
-        Color::new(1.0, 1.0, 1.0) * 0.5 * (1.0 + (self.scale * point.z + 10.0 * self.noise.turb(point, 2)).sin())
+        Color::new(1.0, 1.0, 1.0)
+            * 0.5
+            * (1.0 + (self.scale * point.z + 10.0 * self.noise.turb(point, 2)).sin())
+    }
+}
+
+pub struct ImageTexture {
+    data: Vec<u8>,
+    width: u32,
+    height: u32,
+}
+
+impl ImageTexture {
+    pub fn new(path: &str) -> Result<Self, image::error::ImageError> {
+        let img = image::open(path)?;
+        Ok(Self {
+            data: Vec::from(img.as_bytes()),
+            width: img.width(),
+            height: img.height(),
+        })
+    }
+}
+
+impl Texture for ImageTexture {
+    fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
+        let u = u.clamp(0.0, 1.0);
+        let v = 1.0 - v.clamp(0.0, 1.0);
+        let mut i = (u * self.width as f32) as u32;
+        let mut j = (v * self.height as f32) as u32;
+        if i >= self.width {
+            i = self.width - 1;
+        }
+        if j >= self.height {
+            j = self.height - 1;
+        }
+
+        let color_scale = 1.0 / 255.0;
+        let pixel = j * self.width * 3 + i * 3;
+        Color::new(
+            color_scale * self.data[pixel as usize] as f32,
+            color_scale * self.data[pixel as usize + 1] as f32,
+            color_scale * self.data[pixel as usize + 2] as f32,
+        )
     }
 }
