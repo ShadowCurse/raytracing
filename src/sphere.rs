@@ -20,7 +20,7 @@ fn get_sphere_uv(point: &Point3) -> (f32, f32) {
     // v: from Y = -1 to Y = +1
     use std::f32::consts::PI;
 
-    let theta = -point.y.acos();
+    let theta = (-point.y).acos();
     let phi = -point.z.atan2(point.x) + PI;
 
     (phi / (2.0 * PI), theta / PI)

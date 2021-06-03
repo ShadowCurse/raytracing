@@ -37,12 +37,7 @@ impl Vec3 {
     }
 
     pub fn random_unit() -> Self {
-        let mut rng = rand::thread_rng();
-        let uniform = rand::distributions::Uniform::<f32>::new(-1.0, 1.0);
-        let x = uniform.sample(&mut rng);
-        let y = uniform.sample(&mut rng);
-        let z = (1.0 - x.powi(2) - y.powi(2)).sqrt();
-        Self { x, y, z }
+        Self::random(-1.0, 1.0).unit()
     }
 
     pub fn random_in_unit_sphere() -> Self {
