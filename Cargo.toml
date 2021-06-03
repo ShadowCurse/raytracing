@@ -13,3 +13,4 @@ debug = true
 sdl2 = "0.34.5"
 rand = "0.8.3"
 crossbeam = "0.8.0"
+image = "0.23.14"

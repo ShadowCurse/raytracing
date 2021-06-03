@@ -13,7 +13,6 @@ mod world;
 
 use camera::*;
 use material::*;
-use perlin::*;
 use renderer::*;
 use sphere::*;
 use texture::*;
@@ -25,11 +24,11 @@ use std::sync::Arc;
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const SCREEN_WIDTH: u32 = 1280;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 100;
-const MAX_DEPTH: u32 = 50;
+const SAMPLES_PER_PIXEL: u32 = 10;
+const MAX_DEPTH: u32 = 5;
 
 pub fn main() -> Result<(), String> {
-    let world = two_perlin_spheres();
+    let world = earth();
 
     // let now = std::time::Instant::now();
     // let bvh = BVHNode::new(&world, 0.0, 1.0);
@@ -138,7 +137,7 @@ fn world_1() -> World {
     world
 }
 
-fn two_shperes() -> World {
+fn two_spheres() -> World {
     let mut world = World::default();
 
     let checker = Arc::new(Lambertian::new(Arc::new(CheckerTexture::from_colors(
@@ -174,6 +173,20 @@ fn two_perlin_spheres() -> World {
         Point3::new(0.0, 2.0, 0.0),
         2.0,
         checker.clone(),
+    )));
+
+    world
+}
+fn earth() -> World {
+    let mut world = World::default();
+
+    let texture = ImageTexture::new("textures/earthmap.jpg").unwrap();
+    let material = Arc::new(Lambertian::new(Arc::new(texture)));
+
+    world.add_object(Arc::new(Sphere::new(
+        Point3::new(0.0, 0.0, 0.0),
+        2.0,
+        material,
     )));
 
     world
