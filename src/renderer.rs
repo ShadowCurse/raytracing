@@ -119,7 +119,12 @@ impl<'a> Renderer {
         Ok(())
     }
 
-    fn ray_color(ray: &Ray, hittable: &WithHittableTrait, max_depth: u32) -> Color {
+    fn ray_color(
+        ray: &Ray,
+        hittable: &WithHittableTrait,
+        background: &Color,
+        max_depth: u32,
+    ) -> Color {
         let mut final_color = Color::new(1.0, 1.0, 1.0);
         let mut current_ray = *ray;
         let mut curr_depth: u32 = 0;
@@ -129,19 +134,19 @@ impl<'a> Renderer {
                 return Color::new(0.0, 0.0, 0.0);
             };
             if let Some(hit) = hittable.hit(&current_ray, 0.001, f32::INFINITY) {
+                let emitted = hit.material.unwrap().emit(hit.u, hit.u, &hit.point);
                 if let Some((scatter_ray, scatter_color)) = hit.scatter(&current_ray) {
                     current_ray = scatter_ray;
-                    final_color *= scatter_color;
+                    final_color = emitted + final_color * scatter_color;
                 } else {
-                    return Color::new(0.0, 0.0, 0.0);
+                    return emitted;
                 }
             } else {
+                final_color *= background;
                 break;
             }
         }
-        let unit_direction = current_ray.direction.unit();
-        let t = 0.5 * (unit_direction.y + 1.0);
-        final_color * ((1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0))
+        final_color
     }
 
     fn render_tile(
@@ -168,7 +173,7 @@ impl<'a> Renderer {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, hittable, max_depth);
+                    color += Self::ray_color(&r, hittable, &Color::new(0.01, 0.01, 0.01), max_depth);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
