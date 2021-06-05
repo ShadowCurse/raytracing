@@ -139,7 +139,7 @@ impl<'a> Renderer {
                     current_ray = scatter_ray;
                     final_color = emitted + final_color * scatter_color;
                 } else {
-                    return emitted;
+                    break;
                 }
             } else {
                 final_color *= background;
@@ -173,7 +173,7 @@ impl<'a> Renderer {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, hittable, &Color::new(0.01, 0.01, 0.01), max_depth);
+                    color += Self::ray_color(&r, hittable, &Color::new(0.0, 0.0, 0.0), max_depth);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
