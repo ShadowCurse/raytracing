@@ -280,6 +280,14 @@ impl MulAssign<f32> for Vec3 {
     }
 }
 
+impl MulAssign<&Vec3> for Vec3 {
+    fn mul_assign(&mut self, rhs: &Vec3) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
+    }
+}
+
 impl Div<f32> for Vec3 {
     type Output = Self;
 
