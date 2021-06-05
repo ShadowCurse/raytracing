@@ -99,7 +99,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
+    fn color(&self, u: f32, v: f32, _: &Point3) -> Color {
         let u = u.clamp(0.0, 1.0);
         let v = 1.0 - v.clamp(0.0, 1.0);
         let mut i = (u * self.width as f32) as u32;
