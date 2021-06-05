@@ -42,12 +42,12 @@ impl Material for Lambertian {
 }
 
 pub struct Metal {
-    pub albedo: Color,
+    pub albedo: Arc<WithTexture>,
     pub fuzz: f32,
 }
 
 impl Metal {
-    pub fn new(albedo: Color, fuzz: f32) -> Self {
+    pub fn new(albedo: Arc<WithTexture>, fuzz: f32) -> Self {
         Self {
             albedo,
             fuzz: if fuzz < 1.0 { fuzz } else { 1.0 },
@@ -64,7 +64,11 @@ impl Material for Metal {
             ray.time,
         );
         return if scattered.direction.dot(&hit_record.normal) > 0.0 {
-            Some((scattered, self.albedo))
+            Some((
+                scattered,
+                self.albedo
+                    .color(hit_record.u, hit_record.v, &hit_record.point),
+            ))
         } else {
             None
         };
