@@ -1,7 +1,7 @@
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::texture::WithTexture;
-use crate::vec3::{Color, Vec3};
+use crate::vec3::{Color, Point3, Vec3};
 
 use rand::Rng;
 use std::sync::Arc;
@@ -9,7 +9,12 @@ use std::sync::Arc;
 pub type WithMaterialTrait = dyn Material + Sync + Send;
 
 pub trait Material: Sync + Send {
-    fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)>;
+    fn scatter(&self, _ray_in: &Ray, _hit_record: &HitRecord) -> Option<(Ray, Color)> {
+        None
+    }
+    fn emit(&self, _u: f32, _v: f32, _point: &Point3) -> Color {
+        Color::default()
+    }
 }
 
 pub struct Lambertian {
@@ -108,5 +113,21 @@ impl Material for Dielectric {
             Ray::new(hit_record.point, direction, ray.time),
             Color::new(1.0, 1.0, 1.0),
         ))
+    }
+}
+
+pub struct DiffuseLight {
+    pub emit: Arc<WithTexture>,
+}
+
+impl DiffuseLight {
+    pub fn new(emit: Arc<WithTexture>) -> Self {
+        Self { emit }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emit(&self, u: f32, v: f32, point: &Point3) -> Color {
+        self.emit.color(u, v, point)
     }
 }
