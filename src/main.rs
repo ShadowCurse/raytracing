@@ -3,18 +3,18 @@ mod bvh;
 mod camera;
 mod hittable;
 mod material;
+mod objects;
 mod perlin;
 mod ray;
 mod renderer;
-mod sphere;
 mod texture;
 mod vec3;
 mod world;
 
 use camera::*;
 use material::*;
+use objects::*;
 use renderer::*;
-use sphere::*;
 use texture::*;
 use vec3::*;
 use world::*;
@@ -22,20 +22,20 @@ use world::*;
 use std::sync::Arc;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 1280;
+const SCREEN_WIDTH: u32 = 1000;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 10;
-const MAX_DEPTH: u32 = 5;
+const SAMPLES_PER_PIXEL: u32 = 400;
+const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
-    let world = earth();
+    let world = simple_light();
 
     // let now = std::time::Instant::now();
     // let bvh = BVHNode::new(&world, 0.0, 1.0);
     // let delta = std::time::Instant::now() - now;
     // println!("bvh created in {}ms", delta.as_millis());
 
-    let look_from = Point3::new(13.0, 2.0, 3.0);
+    let look_from = Point3::new(15.0, 4.0, 5.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
     let v_up = Point3::new(0.0, 1.0, 0.0);
     let dits_to_focus = 10.0;
@@ -45,7 +45,7 @@ pub fn main() -> Result<(), String> {
         &look_from,
         &look_at,
         &v_up,
-        20.0,
+        40.0,
         ASPECT_RATIO,
         aperture,
         dits_to_focus,
@@ -188,6 +188,30 @@ fn earth() -> World {
         2.0,
         material,
     )));
+
+    world
+}
+
+fn simple_light() -> World {
+    let mut world = World::default();
+
+    let checker = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(4.0))));
+
+    world.add_object(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        checker.clone(),
+    )));
+    world.add_object(Arc::new(Sphere::new(
+        Point3::new(0.0, 2.0, 0.0),
+        2.0,
+        checker,
+    )));
+
+    let difflight = Arc::new(DiffuseLight::new(Arc::new( SolidTexture::from_rgb(
+        1.0, 1.0, 1.0,
+    ))));
+    world.add_object(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
 
     world
 }
