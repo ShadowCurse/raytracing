@@ -19,6 +19,7 @@ use texture::*;
 use vec3::*;
 use world::*;
 
+use image::imageops::FilterType::Lanczos3;
 use std::sync::Arc;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -28,15 +29,15 @@ const SAMPLES_PER_PIXEL: u32 = 400;
 const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
-    let world = simple_light();
+    let world = cornell_box();
 
     // let now = std::time::Instant::now();
     // let bvh = BVHNode::new(&world, 0.0, 1.0);
     // let delta = std::time::Instant::now() - now;
     // println!("bvh created in {}ms", delta.as_millis());
 
-    let look_from = Point3::new(15.0, 4.0, 5.0);
-    let look_at = Point3::new(0.0, 0.0, 0.0);
+    let look_from = Point3::new(278.0, 278.0, -800.0);
+    let look_at = Point3::new(278.0, 278.0, 0.0);
     let v_up = Point3::new(0.0, 1.0, 0.0);
     let dits_to_focus = 10.0;
     let aperture = 0.0;
@@ -101,7 +102,7 @@ fn world_1() -> World {
                     )));
                 } else if choose_mat < 0.95 {
                     let material_metal = Arc::new(Metal::new(
-                        Color::random(0.5, 1.0),
+                        Arc::new(SolidTexture::from_color(Color::random(0.5, 1.0))),
                         uniform.sample(&mut rng),
                     ));
                     world.add_object(Arc::new(Sphere::new(center, 0.2, material_metal)));
@@ -127,7 +128,10 @@ fn world_1() -> World {
         1.0,
         material_left,
     )));
-    let material_right = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    let material_right = Arc::new(Metal::new(
+        Arc::new(SolidTexture::from_color(Color::new(0.7, 0.6, 0.5))),
+        0.0,
+    ));
     world.add_object(Arc::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
@@ -208,10 +212,78 @@ fn simple_light() -> World {
         checker,
     )));
 
-    let difflight = Arc::new(DiffuseLight::new(Arc::new( SolidTexture::from_rgb(
-        1.0, 1.0, 1.0,
+    let difflight = Arc::new(DiffuseLight::new(Arc::new(SolidTexture::from_rgb(
+        4.0, 4.0, 4.0,
     ))));
     world.add_object(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
+
+    world
+}
+
+fn cornell_box() -> World {
+    let mut world = World::default();
+
+    let red = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = Arc::new(DiffuseLight::new(Arc::new(SolidTexture::from_rgb(
+        150.0, 150.0, 150.0,
+    ))));
+
+    world.add_object(Arc::new(YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        green.clone(),
+    )));
+    world.add_object(Arc::new(YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        red.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        light.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    world.add_object(Arc::new(XYRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
 
     world
 }
