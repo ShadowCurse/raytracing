@@ -125,28 +125,19 @@ impl<'a> Renderer {
         background: &Color,
         max_depth: u32,
     ) -> Color {
-        let mut final_color = Color::new(1.0, 1.0, 1.0);
-        let mut current_ray = *ray;
-        let mut curr_depth: u32 = 0;
-        loop {
-            curr_depth += 1;
-            if curr_depth == max_depth {
-                return Color::new(0.0, 0.0, 0.0);
-            };
-            if let Some(hit) = hittable.hit(&current_ray, 0.001, f32::INFINITY) {
-                let emitted = hit.material.unwrap().emit(hit.u, hit.u, &hit.point);
-                if let Some((scatter_ray, scatter_color)) = hit.scatter(&current_ray) {
-                    current_ray = scatter_ray;
-                    final_color = emitted + final_color * scatter_color;
-                } else {
-                    break;
-                }
-            } else {
-                final_color *= background;
-                break;
-            }
+        if max_depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
         }
-        final_color
+        return if let Some(hit) = hittable.hit(ray, 0.001, f32::INFINITY) {
+            let emitted = hit.material.unwrap().emit(hit.u, hit.v, &hit.point);
+            if let Some((ray, color)) = hit.scatter(&ray) {
+                emitted + color * Self::ray_color(&ray, hittable, background, max_depth - 1)
+            } else {
+                emitted
+            }
+        } else {
+            *background
+        };
     }
 
     fn render_tile(
