@@ -19,13 +19,12 @@ use texture::*;
 use vec3::*;
 use world::*;
 
-use image::imageops::FilterType::Lanczos3;
 use std::sync::Arc;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const SCREEN_WIDTH: u32 = 1000;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 400;
+const SAMPLES_PER_PIXEL: u32 = 100;
 const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
@@ -284,6 +283,17 @@ fn cornell_box() -> World {
         555.0,
         white.clone(),
     )));
+    world.add_object(Arc::new( Box3d::new(
+        Point3::new(130.0, 0.0, 65.0),
+        Point3::new(295.0, 165.0, 230.0),
+        white.clone(),
+    )));
+    world.add_object(Arc::new(Box3d::new(
+        Point3::new(265.0, 0.0, 295.0),
+        Point3::new(430.0, 330.0, 460.0),
+        white.clone(),
+    )));
+
 
     world
 }

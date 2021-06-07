@@ -4,6 +4,7 @@ use crate::material::WithMaterialTrait;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
 
+use crate::world::World;
 use std::borrow::Borrow;
 use std::sync::Arc;
 
@@ -333,7 +334,53 @@ impl Hittable for YZRect {
     fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
         Some(AABB::new(
             Point3::new(self.k - 0.00001, self.y0, self.z0),
-            Point3::new(self.k + 0.00001, self.y1 ,self.z1),
+            Point3::new(self.k + 0.00001, self.y1, self.z1),
         ))
+    }
+}
+
+pub struct Box3d {
+    pub min: Point3,
+    pub max: Point3,
+    pub sides: World,
+}
+
+impl Box3d {
+    pub fn new(min: Point3, max: Point3, material: Arc<WithMaterialTrait>) -> Self {
+        let mut world = World::default();
+
+        world.add_object(Arc::new(XYRect::new(
+            0.0,
+            555.0,
+            0.0,
+            555.0,
+            55.0,
+            material.clone(),
+        )));
+
+        world.add_object(Arc::new(XYRect::new(min.x, max.x, min.y, max.y, max.z, material.clone())));
+        world.add_object(Arc::new(XYRect::new(min.x, max.x, min.y, max.y, min.z, material.clone())));
+
+        world.add_object(Arc::new(XZRect::new(min.x, max.x, min.z, max.z, max.y, material.clone())));
+        world.add_object(Arc::new(XZRect::new(min.x, max.x, min.z, max.z, min.y, material.clone())));
+
+        world.add_object(Arc::new(YZRect::new(min.y, max.y, min.z, max.z, max.x, material.clone())));
+        world.add_object(Arc::new(YZRect::new(min.y, max.y, min.z, max.z, min.x, material.clone())));
+
+        Self {
+            min,
+            max,
+            sides: world,
+        }
+    }
+}
+
+impl Hittable for Box3d {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.sides.hit(ray, t_max, t_min)
+    }
+
+    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
+        Some(AABB::new(self.min, self.max))
     }
 }
