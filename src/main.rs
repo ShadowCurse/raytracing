@@ -19,6 +19,7 @@ use texture::*;
 use vec3::*;
 use world::*;
 
+use crate::hittable::{Rotate, Translate};
 use std::sync::Arc;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -283,17 +284,29 @@ fn cornell_box() -> World {
         555.0,
         white.clone(),
     )));
-    world.add_object(Arc::new( Box3d::new(
-        Point3::new(130.0, 0.0, 65.0),
-        Point3::new(295.0, 165.0, 230.0),
-        white.clone(),
-    )));
-    world.add_object(Arc::new(Box3d::new(
-        Point3::new(265.0, 0.0, 295.0),
-        Point3::new(430.0, 330.0, 460.0),
-        white.clone(),
+    world.add_object(Arc::new(Translate::new(
+        Arc::new(Rotate::new(
+            Arc::new(Box3d::new(
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(165.0, 330.0, 165.0),
+                white.clone(),
+            )),
+            15.0,
+        )),
+        Vec3::new(265.0, 0.0, 295.0),
     )));
 
+    world.add_object(Arc::new(Translate::new(
+        Arc::new(Rotate::new(
+            Arc::new(Box3d::new(
+                Point3::new(0.0, 0.0, 0.0),
+                Point3::new(165.0, 165.0, 165.0),
+                white.clone(),
+            )),
+            -18.0,
+        )),
+        Vec3::new(130.0, 0.0, 65.0),
+    )));
 
     world
 }
