@@ -83,3 +83,89 @@ impl Hittable for Translate {
         };
     }
 }
+
+pub struct Rotate {
+    pub object: Arc<WithHittableTrait>,
+    pub sin_theta: f32,
+    pub cos_theta: f32,
+    pub aabb: AABB,
+}
+
+impl Rotate {
+    pub fn new(object: Arc<WithHittableTrait>, angle: f32) -> Self {
+        let radians = angle.to_radians();
+        let sin = radians.sin();
+        let cos = radians.cos();
+        let aabb = object.bounding_box(0.0, 1.0).unwrap();
+
+        let mut min = Point3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+        let mut max = Point3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let x = i as f32 * aabb.maximum.x + (1.0 - i as f32) * aabb.minimum.x;
+                    let y = k as f32 * aabb.maximum.y + (1.0 - j as f32) * aabb.minimum.y;
+                    let z = j as f32 * aabb.maximum.z + (1.0 - k as f32) * aabb.minimum.z;
+
+                    let newx = cos * x + sin * z;
+                    let newz = -sin * x + cos * z;
+
+                    min.x = min.x.min(newx);
+                    min.y = min.y.min(y);
+                    min.z = min.z.min(newz);
+                }
+            }
+        }
+        let aabb = AABB::new(min, max);
+
+        Self {
+            object,
+            sin_theta: sin,
+            cos_theta: cos,
+            aabb,
+        }
+    }
+}
+
+impl Hittable for Rotate {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let mut origin = ray.origin;
+        let mut direction = ray.direction;
+
+        origin.x = self.cos_theta * ray.origin.x - self.sin_theta * ray.origin.z;
+        origin.z = self.sin_theta * ray.origin.x + self.cos_theta * ray.origin.z;
+
+        direction.x = self.cos_theta * ray.direction.x - self.sin_theta * ray.direction.z;
+        direction.z = self.sin_theta * ray.direction.x + self.cos_theta * ray.direction.z;
+
+        let rotated = Ray::new(origin, direction, ray.time);
+
+        if let Some(mut hit) = self.object.hit(&rotated, t_min, t_max) {
+            let mut point = hit.point;
+            let mut normal = hit.normal;
+
+            point.x = self.cos_theta * hit.point.x + self.sin_theta * hit.point.z;
+            point.z = -self.sin_theta * hit.point.x + self.cos_theta * hit.point.z;
+
+            normal.x = self.cos_theta * hit.normal.x + self.sin_theta * hit.normal.z;
+            normal.z = -self.sin_theta * hit.normal.x + self.cos_theta * hit.normal.z;
+
+            Some(HitRecord::new(
+                hit.point,
+                hit.t,
+                hit.u,
+                hit.v,
+                hit.material.unwrap(),
+                &rotated,
+                &normal,
+            ))
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
+        Some(self.aabb)
+    }
+}
