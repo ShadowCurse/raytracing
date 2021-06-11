@@ -2,6 +2,7 @@ use crate::aabb::AABB;
 use crate::material::WithMaterialTrait;
 use crate::ray::Ray;
 use crate::vec3::{Color, Point3, Vec3};
+use std::borrow::Borrow;
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -167,5 +168,76 @@ impl Hittable for Rotate {
 
     fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
         Some(self.aabb)
+    }
+}
+
+pub struct ConstantMedium {
+    pub boundary: Arc<WithHittableTrait>,
+    pub phase_function: Arc<WithMaterialTrait>,
+    pub neg_inv_density: f32,
+}
+
+impl ConstantMedium {
+    pub fn new(
+        boundary: Arc<WithHittableTrait>,
+        density: f32,
+        material: Arc<WithMaterialTrait>,
+    ) -> Self {
+        Self {
+            boundary,
+            phase_function: material,
+            neg_inv_density: -1.0 / density,
+        }
+    }
+}
+
+impl Hittable for ConstantMedium {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        return if let Some(mut hit1) = self.boundary.hit(ray, f32::NEG_INFINITY, f32::INFINITY) {
+            return if let Some(mut hit2) = self.boundary.hit(ray, hit1.t + 0.0001, f32::INFINITY) {
+                if hit1.t < t_min {
+                    hit1.t = t_min;
+                }
+                if hit2.t > t_max {
+                    hit2.t = t_max;
+                }
+
+                if hit1.t >= hit2.t {
+                    return None;
+                }
+
+                if hit1.t < 0.0 {
+                    hit1.t = 0.0;
+                }
+
+                let ray_length = ray.direction.length();
+                let distance_inside_boundary = (hit2.t - hit1.t) * ray_length;
+                let hit_distance = self.neg_inv_density * rand::random::<f32>().log2();
+
+                if hit_distance > distance_inside_boundary {
+                    return None;
+                }
+
+                let t = hit1.t + hit_distance / ray_length;
+                let point = ray.at(t);
+                let normal = Vec3::new(1.0, 0.0, 0.0);
+
+                let mut record = HitRecord::default();
+                record.t = t;
+                record.point = point;
+                record.normal = normal;
+                record.front_face = true;
+                record.material = Some(self.phase_function.borrow());
+                Some(record)
+            } else {
+                None
+            };
+        } else {
+            None
+        };
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
+        self.boundary.bounding_box(time0, time1)
     }
 }
