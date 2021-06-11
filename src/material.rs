@@ -135,3 +135,23 @@ impl Material for DiffuseLight {
         self.emit.color(u, v, point)
     }
 }
+
+pub struct Isotropic {
+    pub albedo: Arc<WithTexture>,
+}
+
+impl Isotropic {
+    pub fn new(texture: Arc<WithTexture>) -> Self {
+        Self { albedo: texture }
+    }
+}
+
+impl Material for Isotropic {
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
+        Some((
+            Ray::new(hit_record.point, Vec3::random_in_unit_sphere(), ray.time),
+            self.albedo
+                .color(hit_record.u, hit_record.v, &hit_record.point),
+        ))
+    }
+}
