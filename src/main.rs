@@ -19,7 +19,7 @@ use texture::*;
 use vec3::*;
 use world::*;
 
-use crate::hittable::{Rotate, Translate};
+use crate::hittable::{ConstantMedium, Rotate, Translate};
 use std::sync::Arc;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
@@ -29,7 +29,7 @@ const SAMPLES_PER_PIXEL: u32 = 100;
 const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
-    let world = cornell_box();
+    let world = cornell_smoke();
 
     // let now = std::time::Instant::now();
     // let bvh = BVHNode::new(&world, 0.0, 1.0);
@@ -306,6 +306,109 @@ fn cornell_box() -> World {
             -18.0,
         )),
         Vec3::new(130.0, 0.0, 65.0),
+    )));
+
+    world
+}
+
+fn cornell_smoke() -> World {
+    let mut world = World::default();
+
+    let red = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.65, 0.05, 0.05,
+    ))));
+    let white = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.73, 0.73, 0.73,
+    ))));
+    let green = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
+        0.12, 0.45, 0.15,
+    ))));
+    let light = Arc::new(DiffuseLight::new(Arc::new(SolidTexture::from_rgb(
+        7.0, 7.0, 7.0,
+    ))));
+
+    world.add_object(Arc::new(YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        green.clone(),
+    )));
+    world.add_object(Arc::new(YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        red.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        113.0,
+        443.0,
+        127.0,
+        432.0,
+        554.0,
+        light.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    world.add_object(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    world.add_object(Arc::new(XYRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    world.add_object(Arc::new(ConstantMedium::new(
+        Arc::new(Translate::new(
+            Arc::new(Rotate::new(
+                Arc::new(Box3d::new(
+                    Point3::new(0.0, 0.0, 0.0),
+                    Point3::new(165.0, 330.0, 165.0),
+                    white.clone(),
+                )),
+                15.0,
+            )),
+            Vec3::new(265.0, 0.0, 295.0),
+        )),
+        0.01,
+        Arc::new(Isotropic::new(Arc::new(SolidTexture::from_color(
+            Color::new(0.0, 0.0, 0.0),
+        )))),
+    )));
+
+    world.add_object(Arc::new(ConstantMedium::new(
+        Arc::new(Translate::new(
+            Arc::new(Rotate::new(
+                Arc::new(Box3d::new(
+                    Point3::new(0.0, 0.0, 0.0),
+                    Point3::new(165.0, 165.0, 165.0),
+                    white.clone(),
+                )),
+                -18.0,
+            )),
+            Vec3::new(130.0, 0.0, 65.0),
+        )),
+        0.01,
+        Arc::new(Isotropic::new(Arc::new(SolidTexture::from_color(
+            Color::new(1.0, 1.0, 1.0),
+        )))),
     )));
 
     world
