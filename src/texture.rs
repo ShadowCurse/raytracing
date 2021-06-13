@@ -111,12 +111,12 @@ impl Texture for ImageTexture {
             j = self.height - 1;
         }
 
-        let color_scale = 1.0 / 255.0;
+        const COLOR_SCALE: f32 = 1.0 / 255.0;
         let pixel = j * self.width * 3 + i * 3;
         Color::new(
-            color_scale * self.data[pixel as usize] as f32,
-            color_scale * self.data[pixel as usize + 1] as f32,
-            color_scale * self.data[pixel as usize + 2] as f32,
+            COLOR_SCALE * self.data[pixel as usize] as f32,
+            COLOR_SCALE * self.data[pixel as usize + 1] as f32,
+            COLOR_SCALE * self.data[pixel as usize + 2] as f32,
         )
     }
 }

@@ -207,12 +207,8 @@ impl Mul<f32> for Vec3 {
 impl Mul<bool> for Vec3 {
     type Output = Self;
 
-    fn mul(self, value: bool) -> Self::Output {
-        Self {
-            x: self.x * value as u32 as f32,
-            y: self.y * value as u32 as f32,
-            z: self.z * value as u32 as f32,
-        }
+    fn mul(self, value: bool) -> Self {
+        return if value { self } else { -self };
     }
 }
 
@@ -220,11 +216,7 @@ impl Mul<bool> for &Vec3 {
     type Output = Vec3;
 
     fn mul(self, value: bool) -> Self::Output {
-        Self::Output {
-            x: self.x * value as u32 as f32,
-            y: self.y * value as u32 as f32,
-            z: self.z * value as u32 as f32,
-        }
+        return if value { *self } else { -*self };
     }
 }
 
@@ -232,11 +224,7 @@ impl Mul<Vec3> for bool {
     type Output = Vec3;
 
     fn mul(self, value: Vec3) -> Self::Output {
-        Self::Output {
-            x: value.x * self as u32 as f32,
-            y: value.y * self as u32 as f32,
-            z: value.z * self as u32 as f32,
-        }
+        return if self { value } else { -value };
     }
 }
 
@@ -244,11 +232,7 @@ impl Mul<&Vec3> for bool {
     type Output = Vec3;
 
     fn mul(self, value: &Vec3) -> Self::Output {
-        Self::Output {
-            x: value.x * self as u32 as f32,
-            y: value.y * self as u32 as f32,
-            z: value.z * self as u32 as f32,
-        }
+        return if self { *value } else { -*value };
     }
 }
 

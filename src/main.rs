@@ -27,16 +27,13 @@ use std::sync::Arc;
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 50;
-const MAX_DEPTH: u32 = 50;
+const SAMPLES_PER_PIXEL: u32 = 1;
+const MAX_DEPTH: u32 = 10;
 
 pub fn main() -> Result<(), String> {
     let world = final_scene();
 
-    // let now = std::time::Instant::now();
-    // let bvh = BVHNode::new(&world, 0.0, 1.0);
-    // let delta = std::time::Instant::now() - now;
-    // println!("bvh created in {}ms", delta.as_millis());
+    let bvh = BVHNode::new(&world, 0.0, 1.0);
 
     let look_from = Point3::new(478.0, 278.0, -600.0);
     let look_at = Point3::new(278.0, 278.0, 0.0);
@@ -56,8 +53,14 @@ pub fn main() -> Result<(), String> {
         1.0,
     );
 
-    let mut renderer = Renderer::new(SCREEN_WIDTH, SCREEN_HEIGHT, SAMPLES_PER_PIXEL, MAX_DEPTH)?;
-    renderer.render(&world, &camera)?;
+    let mut renderer = Renderer::new(
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
+        SAMPLES_PER_PIXEL,
+        MAX_DEPTH,
+        Color::new(0.2, 0.2, 0.2),
+    )?;
+    renderer.render(&bvh, &camera)?;
     renderer.present()?;
     Ok(())
 }
@@ -183,6 +186,7 @@ fn two_perlin_spheres() -> World {
 
     world
 }
+
 fn earth() -> World {
     let mut world = World::default();
 
@@ -489,7 +493,7 @@ fn final_scene() -> World {
         Arc::new(Dielectric::new(1.5)),
     ));
 
-    world.add_object(boundary.clone());
+    // world.add_object(boundary.clone());
     world.add_object(Arc::new(ConstantMedium::new(
         boundary.clone(),
         0.2,

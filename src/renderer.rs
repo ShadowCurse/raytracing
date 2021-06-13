@@ -13,6 +13,7 @@ pub struct Renderer {
     screen_height: u32,
     samples_per_pixel: u32,
     max_depth: u32,
+    background: Color,
     pitch: u32,
     buffer: Vec<u8>,
 }
@@ -23,12 +24,14 @@ impl<'a> Renderer {
         screen_height: u32,
         samples_per_pixel: u32,
         max_depth: u32,
+        background: Color,
     ) -> Result<Self, String> {
         Ok(Self {
             screen_width,
             screen_height,
             samples_per_pixel,
             max_depth,
+            background,
             pitch: screen_width * 3,
             buffer: vec![0u8; (screen_width * screen_height * 3) as usize],
         })
@@ -42,6 +45,7 @@ impl<'a> Renderer {
         let screen_height = self.screen_height;
         let samples_per_pixel = self.samples_per_pixel;
         let max_depth = self.max_depth;
+        let background = self.background;
 
         let now = std::time::Instant::now();
 
@@ -62,6 +66,7 @@ impl<'a> Renderer {
                             camera,
                             samples_per_pixel,
                             max_depth,
+                            &background,
                         );
                     })
                 })
@@ -70,7 +75,7 @@ impl<'a> Renderer {
         .map_err(|e| format!("crossbeam error: {:?}", e))?;
 
         let delta = std::time::Instant::now() - now;
-        println!("Texture created in {}ms", delta.as_millis());
+        println!("Rendered in {}ms", delta.as_millis());
         Ok(())
     }
 
@@ -122,8 +127,8 @@ impl<'a> Renderer {
     fn ray_color(
         ray: &Ray,
         hittable: &WithHittableTrait,
-        background: &Color,
         max_depth: u32,
+        background: &Color,
     ) -> Color {
         if max_depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
@@ -131,7 +136,7 @@ impl<'a> Renderer {
         return if let Some(hit) = hittable.hit(ray, 0.001, f32::INFINITY) {
             let emitted = hit.material.unwrap().emit(hit.u, hit.v, &hit.point);
             if let Some((ray, color)) = hit.scatter(&ray) {
-                emitted + color * Self::ray_color(&ray, hittable, background, max_depth - 1)
+                emitted + color * Self::ray_color(&ray, hittable, max_depth - 1, background)
             } else {
                 emitted
             }
@@ -149,6 +154,7 @@ impl<'a> Renderer {
         camera: &Camera,
         samples_per_pixel: u32,
         max_depth: u32,
+        background: &Color,
     ) {
         println!(
             "rendering buffer x_range: {:?}, y_range: {:?}",
@@ -164,11 +170,16 @@ impl<'a> Renderer {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, hittable, &Color::new(0.0, 0.0, 0.0), max_depth);
+                    color += Self::ray_color(&r, hittable, max_depth, background);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
         });
+        println!(
+            "rendering buffer x_range: {:?}, y_range: {:?} finished",
+            (top_left.0..bot_right.0),
+            (bot_right.1..top_left.1)
+        );
     }
 
     #[inline]
