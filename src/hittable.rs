@@ -38,7 +38,7 @@ impl<'a> HitRecord<'a> {
         }
     }
 
-    pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color)> {
+    pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color, f32)> {
         self.material.unwrap().scatter(ray, &self)
     }
 }
