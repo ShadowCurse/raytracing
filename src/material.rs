@@ -1,11 +1,12 @@
 use crate::hittable::HitRecord;
+use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
 
 use rand::Rng;
-use std::sync::Arc;
 use sdl2::cpuinfo::cpu_cache_line_size;
+use std::sync::Arc;
 
 pub type WithMaterialTrait = dyn Material + Sync + Send;
 
@@ -33,18 +34,14 @@ impl Lambertian {
 
 impl Material for Lambertian {
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color, f32)> {
-        let mut scatter_direction = hit_record.normal + Vec3::random_unit();
-        if scatter_direction.near_zero() {
-            scatter_direction = hit_record.normal;
-        }
-        let direction = scatter_direction.unit();
+        let uvw = Onb::new_from_w(&hit_record.normal);
+        let direction = uvw.local_from_vec(&Vec3::random_cosine_direction());
+        let scattered = Ray::new(hit_record.point, direction.unit(), ray.time);
+        let alb = self
+            .albedo
+            .color(hit_record.u, hit_record.v, &hit_record.point);
         let pdf = hit_record.normal.dot(&direction) / std::f32::consts::PI;
-        Some((
-            Ray::new(hit_record.point, direction, ray.time),
-            self.albedo
-                .color(hit_record.u, hit_record.v, &hit_record.point),
-            pdf,
-        ))
+        Some((scattered, alb, pdf))
     }
     fn scattering_pdf(&self, _ray_in: &Ray, hit_record: &HitRecord, scattered: &Ray) -> f32 {
         let cosine = hit_record.normal.dot(&scattered.direction);
@@ -52,7 +49,7 @@ impl Material for Lambertian {
             0.0
         } else {
             cosine / std::f32::consts::PI
-        }
+        };
     }
 }
 
