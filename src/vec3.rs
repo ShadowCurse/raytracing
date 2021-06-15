@@ -58,6 +58,20 @@ impl Vec3 {
         }
     }
 
+    pub fn random_cosine_direction() -> Self {
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::<f32>::new(0.0, 1.0);
+        let r1 = uniform.sample(&mut rng);
+        let r2 = uniform.sample(&mut rng);
+        let z = (1.0 - r2).sqrt();
+
+        let phi = 2.0 * std::f32::consts::PI * r1;
+        let x = phi.cos() * r2.sqrt();
+        let y = phi.sin() * r2.sqrt();
+
+        Self { x, y, z }
+    }
+
     pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
