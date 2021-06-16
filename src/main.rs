@@ -4,6 +4,7 @@ mod camera;
 mod hittable;
 mod material;
 mod objects;
+mod onb;
 mod perlin;
 mod ray;
 mod renderer;
@@ -24,18 +25,18 @@ use crate::hittable::{ConstantMedium, Rotate, Translate};
 use rand::Rng;
 use std::sync::Arc;
 
-const ASPECT_RATIO: f32 = 16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 800;
+const ASPECT_RATIO: f32 = 1.0; //16.0 / 9.0;
+const SCREEN_WIDTH: u32 = 500;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 1;
-const MAX_DEPTH: u32 = 10;
+const SAMPLES_PER_PIXEL: u32 = 100;
+const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
-    let world = final_scene();
+    let world = cornell_box();
 
     let bvh = BVHNode::new(&world, 0.0, 1.0);
 
-    let look_from = Point3::new(478.0, 278.0, -600.0);
+    let look_from = Point3::new(278.0, 278.0, -800.0);
     let look_at = Point3::new(278.0, 278.0, 0.0);
     let v_up = Point3::new(0.0, 1.0, 0.0);
     let dits_to_focus = 10.0;
@@ -58,7 +59,7 @@ pub fn main() -> Result<(), String> {
         SCREEN_HEIGHT,
         SAMPLES_PER_PIXEL,
         MAX_DEPTH,
-        Color::new(0.2, 0.2, 0.2),
+        Color::new(0.0, 0.0, 0.0),
     )?;
     renderer.render(&bvh, &camera)?;
     renderer.present()?;
@@ -239,7 +240,7 @@ fn cornell_box() -> World {
         0.12, 0.45, 0.15,
     ))));
     let light = Arc::new(DiffuseLight::new(Arc::new(SolidTexture::from_rgb(
-        150.0, 150.0, 150.0,
+        15.0, 15.0, 15.0,
     ))));
 
     world.add_object(Arc::new(YZRect::new(

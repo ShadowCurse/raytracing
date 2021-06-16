@@ -125,7 +125,7 @@ impl<'a> Renderer {
     }
 
     fn ray_color(
-        ray: &Ray,
+        r: &Ray,
         hittable: &WithHittableTrait,
         max_depth: u32,
         background: &Color,
@@ -133,10 +133,14 @@ impl<'a> Renderer {
         if max_depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
-        return if let Some(hit) = hittable.hit(ray, 0.001, f32::INFINITY) {
+        return if let Some(hit) = hittable.hit(r, 0.001, f32::INFINITY) {
             let emitted = hit.material.unwrap().emit(hit.u, hit.v, &hit.point);
-            if let Some((ray, color)) = hit.scatter(&ray) {
-                emitted + color * Self::ray_color(&ray, hittable, max_depth - 1, background)
+            if let Some((ray, color, pdf)) = hit.material.unwrap().scatter(&r, &hit) {
+                emitted
+                    + color
+                        * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
+                        * Self::ray_color(&ray, hittable, max_depth - 1, background)
+                        / pdf
             } else {
                 emitted
             }
