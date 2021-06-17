@@ -29,7 +29,11 @@ impl<'a> HitRecord<'a> {
         let front_face = ray.direction.dot(&outward_normal) < 0.0;
         Self {
             point,
-            normal: front_face * outward_normal,
+            normal: if front_face {
+                *outward_normal
+            } else {
+                -*outward_normal
+            },
             material: Some(material),
             t,
             u,
@@ -106,8 +110,8 @@ impl Rotate {
             for j in 0..2 {
                 for k in 0..2 {
                     let x = i as f32 * aabb.maximum.x + (1.0 - i as f32) * aabb.minimum.x;
-                    let y = k as f32 * aabb.maximum.y + (1.0 - j as f32) * aabb.minimum.y;
-                    let z = j as f32 * aabb.maximum.z + (1.0 - k as f32) * aabb.minimum.z;
+                    let y = j as f32 * aabb.maximum.y + (1.0 - j as f32) * aabb.minimum.y;
+                    let z = k as f32 * aabb.maximum.z + (1.0 - k as f32) * aabb.minimum.z;
 
                     let newx = cos * x + sin * z;
                     let newz = -sin * x + cos * z;
@@ -115,6 +119,10 @@ impl Rotate {
                     min.x = min.x.min(newx);
                     min.y = min.y.min(y);
                     min.z = min.z.min(newz);
+
+                    max.x = max.x.max(newx);
+                    max.y = max.y.max(y);
+                    max.z = max.z.max(newz);
                 }
             }
         }
@@ -152,15 +160,10 @@ impl Hittable for Rotate {
             normal.x = self.cos_theta * hit.normal.x + self.sin_theta * hit.normal.z;
             normal.z = -self.sin_theta * hit.normal.x + self.cos_theta * hit.normal.z;
 
-            Some(HitRecord::new(
-                hit.point,
-                hit.t,
-                hit.u,
-                hit.v,
-                hit.material.unwrap(),
-                &rotated,
-                &normal,
-            ))
+            hit.point = point;
+            hit.front_face = rotated.direction.dot(&normal) < 0.0;
+            hit.normal = if hit.front_face { normal } else { -normal };
+            Some(hit)
         } else {
             None
         }
@@ -239,5 +242,30 @@ impl Hittable for ConstantMedium {
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
         self.boundary.bounding_box(time0, time1)
+    }
+}
+
+pub struct FlipFace {
+    pub object: Arc<WithHittableTrait>,
+}
+
+impl FlipFace {
+    pub fn new(object: Arc<WithHittableTrait>) -> Self {
+        Self { object }
+    }
+}
+
+impl Hittable for FlipFace {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        return if let Some(mut hit) = self.object.hit(ray, t_min, t_max) {
+            hit.front_face = !hit.front_face;
+            Some(hit)
+        } else {
+            None
+        };
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
+        self.object.bounding_box(time0, time1)
     }
 }
