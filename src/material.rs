@@ -5,7 +5,6 @@ use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
 
 use rand::Rng;
-use sdl2::cpuinfo::cpu_cache_line_size;
 use std::sync::Arc;
 
 pub type WithMaterialTrait = dyn Material + Sync + Send;
@@ -14,10 +13,10 @@ pub trait Material: Sync + Send {
     fn scatter(&self, _ray_in: &Ray, _hit_record: &HitRecord) -> Option<(Ray, Color, f32)> {
         None
     }
-    fn scattering_pdf(&self, _ray_in: &Ray, _hit_record: &HitRecord, scattered: &Ray) -> f32 {
+    fn scattering_pdf(&self, _ray_in: &Ray, _hit_record: &HitRecord, _scattered: &Ray) -> f32 {
         0.0
     }
-    fn emit(&self, _u: f32, _v: f32, _point: &Point3) -> Color {
+    fn emit(&self, _ray: &Ray, _hit: &HitRecord, _u: f32, _v: f32, _point: &Point3) -> Color {
         Color::default()
     }
 }
@@ -40,11 +39,11 @@ impl Material for Lambertian {
         let alb = self
             .albedo
             .color(hit_record.u, hit_record.v, &hit_record.point);
-        let pdf = hit_record.normal.dot(&direction) / std::f32::consts::PI;
+        let pdf = uvw.w.dot(&direction) / std::f32::consts::PI;
         Some((scattered, alb, pdf))
     }
     fn scattering_pdf(&self, _ray_in: &Ray, hit_record: &HitRecord, scattered: &Ray) -> f32 {
-        let cosine = hit_record.normal.dot(&scattered.direction);
+        let cosine = hit_record.normal.dot(&scattered.direction.unit());
         return if cosine < 0.0 {
             0.0
         } else {
@@ -143,8 +142,12 @@ impl DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn emit(&self, u: f32, v: f32, point: &Point3) -> Color {
-        self.emit.color(u, v, point)
+    fn emit(&self, ray: &Ray, hit: &HitRecord, u: f32, v: f32, point: &Point3) -> Color {
+        return if hit.front_face {
+            self.emit.color(u, v, point)
+        } else {
+            Color::default()
+        }
     }
 }
 
