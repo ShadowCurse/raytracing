@@ -266,7 +266,7 @@ impl Hittable for XZRect {
             v,
             self.material.borrow(),
             &ray,
-            &Vec3::new(0.0, 0.0, 1.0),
+            &Vec3::new(0.0, 1.0, 0.0),
         ))
     }
 
@@ -327,7 +327,7 @@ impl Hittable for YZRect {
             v,
             self.material.borrow(),
             &ray,
-            &Vec3::new(0.0, 0.0, 1.0),
+            &Vec3::new(1.0, 0.0, 0.0),
         ))
     }
 
