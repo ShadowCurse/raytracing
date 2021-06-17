@@ -1,9 +1,9 @@
 use crate::vec3::Vec3;
 
 pub struct Onb {
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
+    pub u: Vec3,
+    pub v: Vec3,
+    pub w: Vec3,
 }
 
 impl Onb {

@@ -218,38 +218,6 @@ impl Mul<f32> for Vec3 {
     }
 }
 
-impl Mul<bool> for Vec3 {
-    type Output = Self;
-
-    fn mul(self, value: bool) -> Self {
-        return if value { self } else { -self };
-    }
-}
-
-impl Mul<bool> for &Vec3 {
-    type Output = Vec3;
-
-    fn mul(self, value: bool) -> Self::Output {
-        return if value { *self } else { -*self };
-    }
-}
-
-impl Mul<Vec3> for bool {
-    type Output = Vec3;
-
-    fn mul(self, value: Vec3) -> Self::Output {
-        return if self { value } else { -value };
-    }
-}
-
-impl Mul<&Vec3> for bool {
-    type Output = Vec3;
-
-    fn mul(self, value: &Vec3) -> Self::Output {
-        return if self { *value } else { -*value };
-    }
-}
-
 impl Mul for Vec3 {
     type Output = Self;
 
