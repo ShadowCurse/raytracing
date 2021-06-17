@@ -21,7 +21,7 @@ use vec3::*;
 use world::*;
 
 use crate::bvh::BVHNode;
-use crate::hittable::{ConstantMedium, Rotate, Translate};
+use crate::hittable::{ConstantMedium, FlipFace, Rotate, Translate};
 use rand::Rng;
 use std::sync::Arc;
 
@@ -259,14 +259,14 @@ fn cornell_box() -> World {
         0.0,
         red.clone(),
     )));
-    world.add_object(Arc::new(XZRect::new(
+    world.add_object(Arc::new(FlipFace::new(Arc::new(XZRect::new(
         213.0,
         343.0,
         227.0,
         332.0,
         554.0,
         light.clone(),
-    )));
+    )))));
     world.add_object(Arc::new(XZRect::new(
         0.0,
         555.0,

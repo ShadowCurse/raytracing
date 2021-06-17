@@ -7,6 +7,7 @@ use crate::camera::*;
 use crate::hittable::WithHittableTrait;
 use crate::ray::*;
 use crate::vec3::*;
+use rand::Rng;
 
 pub struct Renderer {
     screen_width: u32,
@@ -134,8 +135,26 @@ impl<'a> Renderer {
             return Color::new(0.0, 0.0, 0.0);
         }
         return if let Some(hit) = hittable.hit(r, 0.001, f32::INFINITY) {
-            let emitted = hit.material.unwrap().emit(hit.u, hit.v, &hit.point);
+            let emitted = hit.material.unwrap().emit(r, &hit, hit.u, hit.v, &hit.point);
             if let Some((ray, color, pdf)) = hit.material.unwrap().scatter(&r, &hit) {
+                let on_light = Point3::new(
+                    rand::thread_rng().gen_range(213.0..342.0),
+                    554.0,
+                    rand::thread_rng().gen_range(227.0..332.0),
+                );
+                let mut to_light = on_light - hit.point;
+                let dist_sqrt = to_light.length_squared();
+                to_light = to_light.unit();
+                if to_light.dot(&hit.normal) < 0.0 {
+                    return emitted;
+                }
+                let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+                let light_cos = to_light.y.abs();
+                if light_cos < 0.00001 {
+                    return emitted;
+                }
+                let pdf = dist_sqrt / (light_cos * light_area);
+                let ray = Ray::new(hit.point, to_light, ray.time);
                 emitted
                     + color
                         * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
