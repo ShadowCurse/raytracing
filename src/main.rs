@@ -5,6 +5,7 @@ mod hittable;
 mod material;
 mod objects;
 mod onb;
+mod pdf;
 mod perlin;
 mod ray;
 mod renderer;
@@ -34,6 +35,17 @@ const MAX_DEPTH: u32 = 50;
 pub fn main() -> Result<(), String> {
     let world = cornell_box();
 
+    let light = XZRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        Arc::new(Lambertian::new(Arc::new(SolidTexture::from_color(
+            Color::new(0.4, 0.2, 0.1),
+        )))),
+    );
+
     let bvh = BVHNode::new(&world, 0.0, 1.0);
 
     let look_from = Point3::new(278.0, 278.0, -800.0);
@@ -61,7 +73,7 @@ pub fn main() -> Result<(), String> {
         MAX_DEPTH,
         Color::new(0.0, 0.0, 0.0),
     )?;
-    renderer.render(&bvh, &camera)?;
+    renderer.render(&bvh, &camera, &light)?;
     renderer.present()?;
     Ok(())
 }

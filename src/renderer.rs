@@ -1,13 +1,16 @@
+use crate::camera::Camera;
+use crate::hittable::WithHittableTrait;
+use crate::pdf::{CosinePdf, HittablePdf, Pdf};
+use crate::ray::Ray;
+use crate::vec3::Color;
+
 use rand::distributions::Distribution;
+use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
-
-use crate::camera::*;
-use crate::hittable::WithHittableTrait;
-use crate::ray::*;
-use crate::vec3::*;
-use rand::Rng;
+use std::borrow::Borrow;
+use std::sync::Arc;
 
 pub struct Renderer {
     screen_width: u32,
@@ -38,7 +41,12 @@ impl<'a> Renderer {
         })
     }
 
-    pub fn render(&mut self, hittable: &WithHittableTrait, camera: &Camera) -> Result<(), String> {
+    pub fn render(
+        &mut self,
+        hittable: &WithHittableTrait,
+        camera: &Camera,
+        light: &WithHittableTrait,
+    ) -> Result<(), String> {
         let thread_num = 16;
         let tile_height = self.screen_height / thread_num;
 
@@ -68,6 +76,7 @@ impl<'a> Renderer {
                             samples_per_pixel,
                             max_depth,
                             &background,
+                            light.borrow(),
                         );
                     })
                 })
@@ -130,35 +139,24 @@ impl<'a> Renderer {
         hittable: &WithHittableTrait,
         max_depth: u32,
         background: &Color,
+        light: &WithHittableTrait,
     ) -> Color {
         if max_depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
         return if let Some(hit) = hittable.hit(r, 0.001, f32::INFINITY) {
-            let emitted = hit.material.unwrap().emit(r, &hit, hit.u, hit.v, &hit.point);
+            let emitted = hit
+                .material
+                .unwrap()
+                .emit(r, &hit, hit.u, hit.v, &hit.point);
             if let Some((ray, color, pdf)) = hit.material.unwrap().scatter(&r, &hit) {
-                let on_light = Point3::new(
-                    rand::thread_rng().gen_range(213.0..342.0),
-                    554.0,
-                    rand::thread_rng().gen_range(227.0..332.0),
-                );
-                let mut to_light = on_light - hit.point;
-                let dist_sqrt = to_light.length_squared();
-                to_light = to_light.unit();
-                if to_light.dot(&hit.normal) < 0.0 {
-                    return emitted;
-                }
-                let light_area = (343.0 - 213.0) * (332.0 - 227.0);
-                let light_cos = to_light.y.abs();
-                if light_cos < 0.00001 {
-                    return emitted;
-                }
-                let pdf = dist_sqrt / (light_cos * light_area);
-                let ray = Ray::new(hit.point, to_light, ray.time);
+                let p = HittablePdf::new(light, hit.point);
+                let ray = Ray::new(hit.point, p.generate(), r.time);
+                let pdf = p.value(&ray.direction);
                 emitted
                     + color
                         * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
-                        * Self::ray_color(&ray, hittable, max_depth - 1, background)
+                        * Self::ray_color(&ray, hittable, max_depth - 1, background, light)
                         / pdf
             } else {
                 emitted
@@ -178,6 +176,7 @@ impl<'a> Renderer {
         samples_per_pixel: u32,
         max_depth: u32,
         background: &Color,
+        light: &WithHittableTrait,
     ) {
         println!(
             "rendering buffer x_range: {:?}, y_range: {:?}",
@@ -193,7 +192,7 @@ impl<'a> Renderer {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, hittable, max_depth, background);
+                    color += Self::ray_color(&r, hittable, max_depth, background, light);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
