@@ -2,6 +2,7 @@ use crate::hittable::{Hittable, WithHittableTrait};
 use crate::onb::Onb;
 use crate::vec3::{Point3, Vec3};
 
+use rand::Rng;
 use sdl2::rect::Point;
 use std::sync::Arc;
 
@@ -55,5 +56,30 @@ impl<'a> Pdf for HittablePdf<'a> {
 
     fn generate(&self) -> Vec3 {
         self.object.random(&self.origin)
+    }
+}
+
+pub struct MixturePdf<'a> {
+    pub pdf1: &'a dyn Pdf,
+    pub pdf2: &'a dyn Pdf,
+}
+
+impl<'a> MixturePdf<'a> {
+    pub fn new(pdf1: &'a dyn Pdf, pdf2: &'a dyn Pdf) -> Self {
+        Self { pdf1, pdf2 }
+    }
+}
+
+impl<'a> Pdf for MixturePdf<'a> {
+    fn value(&self, direction: &Vec3) -> f32 {
+        0.5 * self.pdf1.value(direction) + 0.5 * self.pdf2.value(direction)
+    }
+
+    fn generate(&self) -> Vec3 {
+        return if rand::thread_rng().gen_bool(0.5) {
+            self.pdf1.generate()
+        } else {
+            self.pdf2.generate()
+        };
     }
 }

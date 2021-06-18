@@ -1,6 +1,6 @@
 use crate::camera::Camera;
 use crate::hittable::WithHittableTrait;
-use crate::pdf::{CosinePdf, HittablePdf, Pdf};
+use crate::pdf::{CosinePdf, HittablePdf, MixturePdf, Pdf};
 use crate::ray::Ray;
 use crate::vec3::Color;
 
@@ -150,9 +150,11 @@ impl<'a> Renderer {
                 .unwrap()
                 .emit(r, &hit, hit.u, hit.v, &hit.point);
             if let Some((ray, color, pdf)) = hit.material.unwrap().scatter(&r, &hit) {
-                let p = HittablePdf::new(light, hit.point);
-                let ray = Ray::new(hit.point, p.generate(), r.time);
-                let pdf = p.value(&ray.direction);
+                let p0 = CosinePdf::new(&hit.normal);
+                let p1 = HittablePdf::new(light, hit.point);
+                let mixture = MixturePdf::new(&p0, &p1);
+                let ray = Ray::new(hit.point, mixture.generate(), r.time);
+                let pdf = mixture.value(&ray.direction);
                 emitted
                     + color
                         * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
