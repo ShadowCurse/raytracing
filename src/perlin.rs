@@ -50,7 +50,7 @@ impl Perlin {
         let mut tmp_p = point.clone();
         let mut weight = 1.0;
         for _ in 0..depth {
-            accum += weight * Self::noise(self,&tmp_p);
+            accum += weight * Self::noise(self, &tmp_p);
             weight *= 0.5;
             tmp_p *= 2.0;
         }

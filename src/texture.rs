@@ -1,5 +1,6 @@
 use crate::perlin::Perlin;
 use crate::vec3::{Color, Point3};
+
 use image::GenericImageView;
 use std::sync::Arc;
 

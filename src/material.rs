@@ -4,7 +4,6 @@ use crate::ray::Ray;
 use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
 
-use rand::Rng;
 use std::sync::Arc;
 
 pub type WithMaterialTrait = dyn Material + Sync + Send;
@@ -142,12 +141,12 @@ impl DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn emit(&self, ray: &Ray, hit: &HitRecord, u: f32, v: f32, point: &Point3) -> Color {
+    fn emit(&self, _ray: &Ray, hit: &HitRecord, u: f32, v: f32, point: &Point3) -> Color {
         return if hit.front_face {
             self.emit.color(u, v, point)
         } else {
             Color::default()
-        }
+        };
     }
 }
 
