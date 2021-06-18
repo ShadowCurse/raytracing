@@ -2,6 +2,7 @@ use crate::aabb::AABB;
 use crate::material::WithMaterialTrait;
 use crate::ray::Ray;
 use crate::vec3::{Color, Point3, Vec3};
+
 use std::borrow::Borrow;
 use std::sync::Arc;
 
@@ -52,6 +53,12 @@ pub type WithHittableTrait = dyn Hittable + Send + Sync;
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB>;
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
+        0.0
+    }
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        Vec3::new(1.0, 0.0, 0.0)
+    }
 }
 
 pub struct Translate {
