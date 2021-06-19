@@ -6,7 +6,6 @@ use crate::vec3::{Point3, Vec3};
 
 use crate::world::World;
 use rand::Rng;
-use sdl2::rect::Point;
 use std::borrow::Borrow;
 use std::sync::Arc;
 

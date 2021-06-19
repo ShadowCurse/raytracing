@@ -1,10 +1,8 @@
-use crate::hittable::{Hittable, WithHittableTrait};
+use crate::hittable::WithHittableTrait;
 use crate::onb::Onb;
 use crate::vec3::{Point3, Vec3};
 
 use rand::Rng;
-use sdl2::rect::Point;
-use std::sync::Arc;
 
 pub trait Pdf {
     fn value(&self, direction: &Vec3) -> f32;

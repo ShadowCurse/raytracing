@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
-use crate::material::WithMaterialTrait;
+use crate::material::{ScatterRecord, WithMaterialTrait};
 use crate::ray::Ray;
-use crate::vec3::{Color, Point3, Vec3};
+use crate::vec3::{Point3, Vec3};
 
 use std::borrow::Borrow;
 use std::sync::Arc;
@@ -43,7 +43,7 @@ impl<'a> HitRecord<'a> {
         }
     }
 
-    pub fn scatter(&self, ray: &Ray) -> Option<(Ray, Color, f32)> {
+    pub fn scatter(&self, ray: &Ray) -> Option<ScatterRecord> {
         self.material.unwrap().scatter(ray, &self)
     }
 }
