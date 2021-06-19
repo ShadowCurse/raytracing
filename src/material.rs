@@ -1,15 +1,24 @@
 use crate::hittable::HitRecord;
-use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
 
+use crate::pdf::{CosinePdf, Pdf};
 use std::sync::Arc;
+use rand::Rng;
+
+#[derive(Default)]
+pub struct ScatterRecord {
+    pub specular_ray: Ray,
+    pub is_specular: bool,
+    pub attenuation: Color,
+    pub pdf: Option<Box<dyn Pdf>>,
+}
 
 pub type WithMaterialTrait = dyn Material + Sync + Send;
 
 pub trait Material: Sync + Send {
-    fn scatter(&self, _ray_in: &Ray, _hit_record: &HitRecord) -> Option<(Ray, Color, f32)> {
+    fn scatter(&self, _ray_in: &Ray, _hit_record: &HitRecord) -> Option<ScatterRecord> {
         None
     }
     fn scattering_pdf(&self, _ray_in: &Ray, _hit_record: &HitRecord, _scattered: &Ray) -> f32 {
@@ -31,15 +40,15 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color, f32)> {
-        let uvw = Onb::new_from_w(&hit_record.normal);
-        let direction = uvw.local_from_vec(&Vec3::random_cosine_direction());
-        let scattered = Ray::new(hit_record.point, direction.unit(), ray.time);
-        let alb = self
-            .albedo
-            .color(hit_record.u, hit_record.v, &hit_record.point);
-        let pdf = uvw.w.dot(&direction) / std::f32::consts::PI;
-        Some((scattered, alb, pdf))
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
+        Some(ScatterRecord {
+            is_specular: false,
+            attenuation: self
+                .albedo
+                .color(hit_record.u, hit_record.v, &hit_record.point),
+            pdf: Some(Box::new(CosinePdf::new(&hit_record.normal))),
+            ..Default::default()
+        })
     }
     fn scattering_pdf(&self, _ray_in: &Ray, hit_record: &HitRecord, scattered: &Ray) -> f32 {
         let cosine = hit_record.normal.dot(&scattered.direction.unit());
@@ -66,23 +75,15 @@ impl Metal {
 }
 
 impl Material for Metal {
-    // fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
-    //     let reflected = ray.direction.unit().reflect(&hit_record.normal);
-    //     let scattered = Ray::new(
-    //         hit_record.point,
-    //         reflected + self.fuzz * Vec3::random_unit(),
-    //         ray.time,
-    //     );
-    //     return if scattered.direction.dot(&hit_record.normal) > 0.0 {
-    //         Some((
-    //             scattered,
-    //             self.albedo
-    //                 .color(hit_record.u, hit_record.v, &hit_record.point),
-    //         ))
-    //     } else {
-    //         None
-    //     };
-    // }
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
+        let reflected = ray.direction.unit().reflect(&hit_record.normal);
+        Some(ScatterRecord {
+            specular_ray: Ray::new(hit_record.point, reflected + self.fuzz * Vec3::random_in_unit_sphere(), ray.time),
+            attenuation: self.albedo.color(hit_record.u, hit_record.v, &hit_record.point),
+            is_specular: true,
+            ..Default::default()
+        })
+    }
 }
 
 pub struct Dielectric {
@@ -103,31 +104,33 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    // fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
-    //     let refraction_ratio = if hit_record.front_face {
-    //         1.0 / self.index_of_refraction
-    //     } else {
-    //         self.index_of_refraction
-    //     };
-    //     let unit_direction = ray.direction.unit();
-    //     let cos_theta = (-unit_direction).dot(&hit_record.normal).min(1.0);
-    //     let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
-    //
-    //     let mut rng = rand::thread_rng();
-    //     let direction = if refraction_ratio * sin_theta > 1.0
-    //         || Self::reflectance(cos_theta, refraction_ratio) > rng.gen()
-    //     {
-    //         // can not refract
-    //         unit_direction.reflect(&hit_record.normal)
-    //     } else {
-    //         // can refract
-    //         unit_direction.refract(&hit_record.normal, refraction_ratio)
-    //     };
-    //     Some((
-    //         Ray::new(hit_record.point, direction, ray.time),
-    //         Color::new(1.0, 1.0, 1.0),
-    //     ))
-    // }
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
+        let refraction_ratio = if hit_record.front_face {
+            1.0 / self.index_of_refraction
+        } else {
+            self.index_of_refraction
+        };
+        let unit_direction = ray.direction.unit();
+        let cos_theta = (-unit_direction).dot(&hit_record.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
+
+        let mut rng = rand::thread_rng();
+        let direction = if refraction_ratio * sin_theta > 1.0
+            || Self::reflectance(cos_theta, refraction_ratio) > rand::thread_rng().gen()
+        {
+            // can not refract
+            unit_direction.reflect(&hit_record.normal)
+        } else {
+            // can refract
+            unit_direction.refract(&hit_record.normal, refraction_ratio)
+        };
+        Some(ScatterRecord {
+            specular_ray: Ray::new(hit_record.point, direction, ray.time),
+            is_specular: true,
+            attenuation: Color::new(1.0, 1.0, 1.0),
+            ..Default::default()
+        })
+    }
 }
 
 pub struct DiffuseLight {

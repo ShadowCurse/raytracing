@@ -35,15 +35,30 @@ const MAX_DEPTH: u32 = 50;
 pub fn main() -> Result<(), String> {
     let world = cornell_box();
 
-    let light = XZRect::new(
+    let mut lights = World::default();
+    let dummy_material = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_color(
+        Color::new(0.4, 0.2, 0.1),
+    ))));
+    lights.add_object(Arc::new(XZRect::new(
         213.0,
         343.0,
         227.0,
         332.0,
         554.0,
-        Arc::new(Lambertian::new(Arc::new(SolidTexture::from_color(
-            Color::new(0.4, 0.2, 0.1),
-        )))),
+        dummy_material.clone(),
+    )));
+    // lights.add_object(Arc::new(Sphere::new(
+    //     Point3::new(190.0, 90.0, 190.0),
+    //     90.0,
+    //     dummy_material.clone(),
+    // )));
+    let l = XZRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        dummy_material.clone(),
     );
 
     let bvh = BVHNode::new(&world, 0.0, 1.0);
@@ -73,7 +88,7 @@ pub fn main() -> Result<(), String> {
         MAX_DEPTH,
         Color::new(0.0, 0.0, 0.0),
     )?;
-    renderer.render(&bvh, &camera, &light)?;
+    renderer.render(&bvh, &camera, &l)?;
     renderer.present()?;
     Ok(())
 }
@@ -254,6 +269,10 @@ fn cornell_box() -> World {
     let light = Arc::new(DiffuseLight::new(Arc::new(SolidTexture::from_rgb(
         15.0, 15.0, 15.0,
     ))));
+    let aluminium = Arc::new(Metal::new(
+        Arc::new(SolidTexture::from_rgb(0.8, 0.8, 0.8)),
+        0.0,
+    ));
 
     world.add_object(Arc::new(YZRect::new(
         0.0,
@@ -308,7 +327,7 @@ fn cornell_box() -> World {
             Arc::new(Box3d::new(
                 Point3::new(0.0, 0.0, 0.0),
                 Point3::new(165.0, 330.0, 165.0),
-                white.clone(),
+                aluminium.clone(),
             )),
             15.0,
         )),
@@ -326,6 +345,12 @@ fn cornell_box() -> World {
         )),
         Vec3::new(130.0, 0.0, 65.0),
     )));
+
+    // world.add_object(Arc::new(Sphere::new(
+    //     Point3::new(190.0, 90.0, 190.0),
+    //     90.0,
+    //     Arc::new(Dielectric::new(1.0)),
+    // )));
 
     world
 }

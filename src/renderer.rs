@@ -1,16 +1,14 @@
 use crate::camera::Camera;
 use crate::hittable::WithHittableTrait;
-use crate::pdf::{CosinePdf, HittablePdf, MixturePdf, Pdf};
+use crate::pdf::{HittablePdf, MixturePdf, Pdf};
 use crate::ray::Ray;
 use crate::vec3::Color;
 
 use rand::distributions::Distribution;
-use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 use std::borrow::Borrow;
-use std::sync::Arc;
 
 pub struct Renderer {
     screen_width: u32,
@@ -45,7 +43,7 @@ impl<'a> Renderer {
         &mut self,
         hittable: &WithHittableTrait,
         camera: &Camera,
-        light: &WithHittableTrait,
+        lights: &WithHittableTrait,
     ) -> Result<(), String> {
         let thread_num = 16;
         let tile_height = self.screen_height / thread_num;
@@ -76,7 +74,7 @@ impl<'a> Renderer {
                             samples_per_pixel,
                             max_depth,
                             &background,
-                            light.borrow(),
+                            lights.borrow(),
                         );
                     })
                 })
@@ -139,7 +137,7 @@ impl<'a> Renderer {
         hittable: &WithHittableTrait,
         max_depth: u32,
         background: &Color,
-        light: &WithHittableTrait,
+        lights: &WithHittableTrait,
     ) -> Color {
         if max_depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
@@ -149,16 +147,28 @@ impl<'a> Renderer {
                 .material
                 .unwrap()
                 .emit(r, &hit, hit.u, hit.v, &hit.point);
-            if let Some((ray, color, pdf)) = hit.material.unwrap().scatter(&r, &hit) {
-                let p0 = CosinePdf::new(&hit.normal);
-                let p1 = HittablePdf::new(light, hit.point);
-                let mixture = MixturePdf::new(&p0, &p1);
+            if let Some(scatter_rec) = hit.material.unwrap().scatter(&r, &hit) {
+                if scatter_rec.is_specular {
+                    return scatter_rec.attenuation
+                        * Self::ray_color(
+                            &scatter_rec.specular_ray,
+                            hittable,
+                            max_depth - 1,
+                            background,
+                            lights,
+                        );
+                }
+                let light_pdf = HittablePdf::new(lights, hit.point);
+                let mixture = MixturePdf::new(
+                    &light_pdf,
+                    scatter_rec.pdf.borrow().as_ref().unwrap().borrow(),
+                );
                 let ray = Ray::new(hit.point, mixture.generate(), r.time);
                 let pdf = mixture.value(&ray.direction);
                 emitted
-                    + color
+                    + scatter_rec.attenuation
                         * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
-                        * Self::ray_color(&ray, hittable, max_depth - 1, background, light)
+                        * Self::ray_color(&ray, hittable, max_depth - 1, background, lights)
                         / pdf
             } else {
                 emitted
@@ -178,7 +188,7 @@ impl<'a> Renderer {
         samples_per_pixel: u32,
         max_depth: u32,
         background: &Color,
-        light: &WithHittableTrait,
+        lights: &WithHittableTrait,
     ) {
         println!(
             "rendering buffer x_range: {:?}, y_range: {:?}",
@@ -194,7 +204,7 @@ impl<'a> Renderer {
                     let u = (x as f32 + uniform.sample(&mut rng)) / (window_size.0 - 1) as f32;
                     let v = (y as f32 + uniform.sample(&mut rng)) / (window_size.1 - 1) as f32;
                     let r = camera.get_ray(u, v);
-                    color += Self::ray_color(&r, hittable, max_depth, background, light);
+                    color += Self::ray_color(&r, hittable, max_depth, background, lights);
                 }
                 Self::write_pixel(buffer, top_left, bot_right, x, y, &color, samples_per_pixel);
             });
