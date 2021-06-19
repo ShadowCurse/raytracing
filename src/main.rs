@@ -29,41 +29,37 @@ use std::sync::Arc;
 const ASPECT_RATIO: f32 = 1.0; //16.0 / 9.0;
 const SCREEN_WIDTH: u32 = 500;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 100;
+const SAMPLES_PER_PIXEL: u32 = 1000;
 const MAX_DEPTH: u32 = 50;
 
 pub fn main() -> Result<(), String> {
-    let world = cornell_box();
+    let world = final_scene();
 
-    let mut lights = World::default();
+    // let mut lights = World::default();
     let dummy_material = Arc::new(Lambertian::new(Arc::new(SolidTexture::from_color(
         Color::new(0.4, 0.2, 0.1),
     ))));
-    lights.add_object(Arc::new(XZRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
-        554.0,
-        dummy_material.clone(),
-    )));
+    // lights.add_object(Arc::new(XZRect::new(
+    //     213.0,
+    //     343.0,
+    //     227.0,
+    //     332.0,
+    //     554.0,
+    //     dummy_material.clone(),
+    // )));
     // lights.add_object(Arc::new(Sphere::new(
     //     Point3::new(190.0, 90.0, 190.0),
     //     90.0,
     //     dummy_material.clone(),
     // )));
     let l = XZRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
-        554.0,
+        123.0, 423.0, 147.0, 412.0, 554.0,
         dummy_material.clone(),
     );
 
     let bvh = BVHNode::new(&world, 0.0, 1.0);
 
-    let look_from = Point3::new(278.0, 278.0, -800.0);
+    let look_from = Point3::new(478.0, 278.0, -600.0);
     let look_at = Point3::new(278.0, 278.0, 0.0);
     let v_up = Point3::new(0.0, 1.0, 0.0);
     let dits_to_focus = 10.0;
@@ -327,30 +323,30 @@ fn cornell_box() -> World {
             Arc::new(Box3d::new(
                 Point3::new(0.0, 0.0, 0.0),
                 Point3::new(165.0, 330.0, 165.0),
-                aluminium.clone(),
+                white.clone(),
             )),
             15.0,
         )),
         Vec3::new(265.0, 0.0, 295.0),
     )));
 
-    world.add_object(Arc::new(Translate::new(
-        Arc::new(Rotate::new(
-            Arc::new(Box3d::new(
-                Point3::new(0.0, 0.0, 0.0),
-                Point3::new(165.0, 165.0, 165.0),
-                white.clone(),
-            )),
-            -18.0,
-        )),
-        Vec3::new(130.0, 0.0, 65.0),
-    )));
-
-    // world.add_object(Arc::new(Sphere::new(
-    //     Point3::new(190.0, 90.0, 190.0),
-    //     90.0,
-    //     Arc::new(Dielectric::new(1.0)),
+    // world.add_object(Arc::new(Translate::new(
+    //     Arc::new(Rotate::new(
+    //         Arc::new(Box3d::new(
+    //             Point3::new(0.0, 0.0, 0.0),
+    //             Point3::new(165.0, 165.0, 165.0),
+    //             white.clone(),
+    //         )),
+    //         -18.0,
+    //     )),
+    //     Vec3::new(130.0, 0.0, 65.0),
     // )));
+
+    world.add_object(Arc::new(Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
+        Arc::new(Dielectric::new(2.0)),
+    )));
 
     world
 }
@@ -492,9 +488,9 @@ fn final_scene() -> World {
         7.0, 7.0, 7.0,
     ))));
 
-    world.add_object(Arc::new(XZRect::new(
+    world.add_object(Arc::new(FlipFace::new(Arc::new(XZRect::new(
         123.0, 423.0, 147.0, 412.0, 554.0, light,
-    )));
+    )))));
 
     let center1 = Point3::new(400.0, 400.0, 400.0);
     let center2 = center1 + Point3::new(30.0, 0.0, 0.0);
