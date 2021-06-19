@@ -8,6 +8,8 @@ use crate::world::World;
 use rand::Rng;
 use std::borrow::Borrow;
 use std::sync::Arc;
+use crate::onb::Onb;
+use std::fs::read_dir;
 
 pub struct Sphere {
     pub center: Point3,
@@ -78,6 +80,23 @@ impl Hittable for Sphere {
             self.center - Vec3::new(self.radius, self.radius, self.radius),
             self.center + Vec3::new(self.radius, self.radius, self.radius),
         ))
+    }
+
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
+        if let Some(hit) = self.hit(&Ray::new(*origin, *direction, 0.0), 0.001, f32::INFINITY) {
+            let cos_theta_max =
+                (1.0 - self.radius.powi(2) / (self.center - origin).length_squared()).sqrt();
+            let solid_angle = 2.0 * std::f32::consts::PI * (1.0 - cos_theta_max);
+            1.0 / solid_angle
+        } else {
+            0.0
+        }
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        let dir = self.center - origin;
+        let uvw = Onb::new_from_w(&dir);
+        uvw.local_from_vec(&Vec3::random_to_sphere(self.radius, dir.length_squared()))
     }
 }
 

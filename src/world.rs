@@ -2,6 +2,8 @@ use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
 use crate::ray::Ray;
 
+use crate::vec3::{Point3, Vec3};
+use rand::Rng;
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -47,5 +49,16 @@ impl Hittable for World {
             }
         }
         Some(output_box)
+    }
+
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
+        let weight = 1.0 / self.objects.len() as f32;
+        self.objects.iter().fold(0.0, |mut sum, obj| {
+            sum + weight * obj.pdf_value(origin, direction)
+        })
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        self.objects[rand::thread_rng().gen_range(0..self.objects.len())].random(origin)
     }
 }
