@@ -72,6 +72,20 @@ impl Vec3 {
         Self { x, y, z }
     }
 
+    pub fn random_to_sphere(radius: f32, distance_squared: f32) -> Self {
+        let mut rng = rand::thread_rng();
+        let uniform = rand::distributions::Uniform::<f32>::new(0.0, 1.0);
+        let r1 = uniform.sample(&mut rng);
+        let r2 = uniform.sample(&mut rng);
+        let z = 1.0 + r2 * ((1.0 - radius.powi(2) / distance_squared).sqrt() - 1.0);
+
+        let phi = 2.0 * std::f32::consts::PI * r1;
+        let x = phi.cos() * (1.0 - z.powi(2)).sqrt();
+        let y = phi.sin() * (1.0 - z.powi(2)).sqrt();
+
+        Self { x, y, z }
+    }
+
     pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
