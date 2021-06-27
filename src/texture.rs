@@ -1,8 +1,9 @@
-use crate::perlin::Perlin;
-use crate::vec3::{Color, Point3};
+use std::sync::Arc;
 
 use image::GenericImageView;
-use std::sync::Arc;
+
+use crate::perlin::Perlin;
+use crate::vec3::{Color, Point3};
 
 pub type WithTexture = dyn Texture + Send + Sync;
 

@@ -1,10 +1,10 @@
+use std::borrow::Borrow;
+use std::sync::Arc;
+
 use crate::aabb::AABB;
 use crate::material::{ScatterRecord, WithMaterialTrait};
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
-
-use std::borrow::Borrow;
-use std::sync::Arc;
 
 #[derive(Default)]
 pub struct HitRecord<'a> {
@@ -53,10 +53,10 @@ pub type WithHittableTrait = dyn Hittable + Send + Sync;
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB>;
-    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
+    fn pdf_value(&self, _origin: &Point3, _direction: &Vec3) -> f32 {
         0.0
     }
-    fn random(&self, origin: &Vec3) -> Vec3 {
+    fn random(&self, _origin: &Vec3) -> Vec3 {
         Vec3::new(1.0, 0.0, 0.0)
     }
 }

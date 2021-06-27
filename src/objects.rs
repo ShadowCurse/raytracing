@@ -1,15 +1,15 @@
+use std::borrow::Borrow;
+use std::sync::Arc;
+
+use rand::Rng;
+
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::WithMaterialTrait;
+use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
-
 use crate::world::World;
-use rand::Rng;
-use std::borrow::Borrow;
-use std::sync::Arc;
-use crate::onb::Onb;
-use std::fs::read_dir;
 
 pub struct Sphere {
     pub center: Point3,
@@ -83,7 +83,7 @@ impl Hittable for Sphere {
     }
 
     fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
-        if let Some(hit) = self.hit(&Ray::new(*origin, *direction, 0.0), 0.001, f32::INFINITY) {
+        if let Some(_) = self.hit(&Ray::new(*origin, *direction, 0.0), 0.001, f32::INFINITY) {
             let cos_theta_max =
                 (1.0 - self.radius.powi(2) / (self.center - origin).length_squared()).sqrt();
             let solid_angle = 2.0 * std::f32::consts::PI * (1.0 - cos_theta_max);
@@ -133,6 +133,7 @@ impl MovingSphere {
             + ((time - self.time0) / (self.time1 - self.time0)) * (self.center1 - self.center0)
     }
 }
+
 impl Hittable for MovingSphere {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let os = ray.origin - self.center(ray.time);

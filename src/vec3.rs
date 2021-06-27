@@ -1,5 +1,6 @@
-use rand::distributions::Distribution;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
+
+use rand::distributions::Distribution;
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;

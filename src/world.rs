@@ -1,10 +1,11 @@
+use std::sync::Arc;
+
+use rand::Rng;
+
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
 use crate::ray::Ray;
-
 use crate::vec3::{Point3, Vec3};
-use rand::Rng;
-use std::sync::Arc;
 
 #[derive(Default)]
 pub struct World {
@@ -53,7 +54,7 @@ impl Hittable for World {
 
     fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
         let weight = 1.0 / self.objects.len() as f32;
-        self.objects.iter().fold(0.0, |mut sum, obj| {
+        self.objects.iter().fold(0.0, |sum, obj| {
             sum + weight * obj.pdf_value(origin, direction)
         })
     }

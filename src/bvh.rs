@@ -1,10 +1,10 @@
+use std::cmp::Ordering;
+use std::sync::Arc;
+
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
 use crate::ray::Ray;
 use crate::world::World;
-
-use std::cmp::Ordering;
-use std::sync::Arc;
 
 // TODO refactor
 pub struct BVHNode {

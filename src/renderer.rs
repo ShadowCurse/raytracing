@@ -1,14 +1,15 @@
-use crate::camera::Camera;
-use crate::hittable::WithHittableTrait;
-use crate::pdf::{HittablePdf, MixturePdf, Pdf};
-use crate::ray::Ray;
-use crate::vec3::Color;
+use std::borrow::Borrow;
 
 use rand::distributions::Distribution;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
-use std::borrow::Borrow;
+
+use crate::camera::Camera;
+use crate::hittable::WithHittableTrait;
+use crate::pdf::{HittablePdf, MixturePdf, Pdf};
+use crate::ray::Ray;
+use crate::vec3::Color;
 
 pub struct Renderer {
     screen_width: u32,
@@ -43,7 +44,7 @@ impl<'a> Renderer {
         &mut self,
         hittable: &WithHittableTrait,
         camera: &Camera,
-        lights: &WithHittableTrait,
+        lights: Option<&WithHittableTrait>,
     ) -> Result<(), String> {
         let thread_num = 16;
         let tile_height = self.screen_height / thread_num;
@@ -74,13 +75,13 @@ impl<'a> Renderer {
                             samples_per_pixel,
                             max_depth,
                             &background,
-                            lights.borrow(),
+                            lights,
                         );
                     })
                 })
                 .for_each(|_| {});
         })
-        .map_err(|e| format!("crossbeam error: {:?}", e))?;
+            .map_err(|e| format!("crossbeam error: {:?}", e))?;
 
         let delta = std::time::Instant::now() - now;
         println!("Rendered in {}ms", delta.as_millis());
@@ -137,7 +138,7 @@ impl<'a> Renderer {
         hittable: &WithHittableTrait,
         max_depth: u32,
         background: &Color,
-        lights: &WithHittableTrait,
+        lights: Option<&WithHittableTrait>,
     ) -> Color {
         if max_depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
@@ -151,25 +152,31 @@ impl<'a> Renderer {
                 if scatter_rec.is_specular {
                     return scatter_rec.attenuation
                         * Self::ray_color(
-                            &scatter_rec.specular_ray,
-                            hittable,
-                            max_depth - 1,
-                            background,
-                            lights,
-                        );
+                        &scatter_rec.specular_ray,
+                        hittable,
+                        max_depth - 1,
+                        background,
+                        lights,
+                    );
                 }
-                let light_pdf = HittablePdf::new(lights, hit.point);
-                let mixture = MixturePdf::new(
-                    &light_pdf,
-                    scatter_rec.pdf.borrow().as_ref().unwrap().borrow(),
-                );
-                let ray = Ray::new(hit.point, mixture.generate(), r.time);
-                let pdf = mixture.value(&ray.direction);
+                let (ray, pdf) = if let Some(lights) = lights {
+                    let light_pdf = HittablePdf::new(lights, hit.point);
+                    let mixture = MixturePdf::new(
+                        &light_pdf,
+                        scatter_rec.pdf.borrow().as_ref().unwrap().borrow(),
+                    );
+                    let ray = Ray::new(hit.point, mixture.generate(), r.time);
+                    (ray, mixture.value(&ray.direction))
+                } else {
+                    let mixture = scatter_rec.pdf.unwrap();
+                    let ray = Ray::new(hit.point, mixture.generate(), r.time);
+                    (ray, mixture.value(&ray.direction))
+                };
                 emitted
                     + scatter_rec.attenuation
-                        * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
-                        * Self::ray_color(&ray, hittable, max_depth - 1, background, lights)
-                        / pdf
+                    * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
+                    * Self::ray_color(&ray, hittable, max_depth - 1, background, lights)
+                    / pdf
             } else {
                 emitted
             }
@@ -188,7 +195,7 @@ impl<'a> Renderer {
         samples_per_pixel: u32,
         max_depth: u32,
         background: &Color,
-        lights: &WithHittableTrait,
+        lights: Option<&WithHittableTrait>,
     ) {
         println!(
             "rendering buffer x_range: {:?}, y_range: {:?}",
@@ -228,16 +235,16 @@ impl<'a> Renderer {
     ) {
         let r = (255.999
             * (color.x / samples_per_pixel as f32)
-                .sqrt()
-                .clamp(0.0, 0.999)) as u8;
+            .sqrt()
+            .clamp(0.0, 0.999)) as u8;
         let g = (255.999
             * (color.y / samples_per_pixel as f32)
-                .sqrt()
-                .clamp(0.0, 0.999)) as u8;
+            .sqrt()
+            .clamp(0.0, 0.999)) as u8;
         let b = (255.999
             * (color.z / samples_per_pixel as f32)
-                .sqrt()
-                .clamp(0.0, 0.999)) as u8;
+            .sqrt()
+            .clamp(0.0, 0.999)) as u8;
 
         let pitch = (bot_right.0 - top_left.0) * 3;
         let offset = (top_left.1 - 1 - y) as usize * pitch as usize + x as usize * 3; // for OpenGl reverse y coord

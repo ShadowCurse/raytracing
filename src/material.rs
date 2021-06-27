@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
+use rand::Rng;
+
 use crate::hittable::HitRecord;
+use crate::pdf::{CosinePdf, Pdf};
 use crate::ray::Ray;
 use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
-
-use crate::pdf::{CosinePdf, Pdf};
-use std::sync::Arc;
-use rand::Rng;
 
 #[derive(Default)]
 pub struct ScatterRecord {
@@ -40,7 +41,7 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
+    fn scatter(&self, _: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         Some(ScatterRecord {
             is_specular: false,
             attenuation: self
@@ -78,8 +79,14 @@ impl Material for Metal {
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         let reflected = ray.direction.unit().reflect(&hit_record.normal);
         Some(ScatterRecord {
-            specular_ray: Ray::new(hit_record.point, reflected + self.fuzz * Vec3::random_in_unit_sphere(), ray.time),
-            attenuation: self.albedo.color(hit_record.u, hit_record.v, &hit_record.point),
+            specular_ray: Ray::new(
+                hit_record.point,
+                reflected + self.fuzz * Vec3::random_in_unit_sphere(),
+                ray.time,
+            ),
+            attenuation: self
+                .albedo
+                .color(hit_record.u, hit_record.v, &hit_record.point),
             is_specular: true,
             ..Default::default()
         })
@@ -114,7 +121,6 @@ impl Material for Dielectric {
         let cos_theta = (-unit_direction).dot(&hit_record.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta.powi(2)).sqrt();
 
-        let mut rng = rand::thread_rng();
         let direction = if refraction_ratio * sin_theta > 1.0
             || Self::reflectance(cos_theta, refraction_ratio) > rand::thread_rng().gen()
         {

@@ -1,8 +1,8 @@
+use rand::Rng;
+
 use crate::hittable::WithHittableTrait;
 use crate::onb::Onb;
 use crate::vec3::{Point3, Vec3};
-
-use rand::Rng;
 
 pub trait Pdf {
     fn value(&self, direction: &Vec3) -> f32;
