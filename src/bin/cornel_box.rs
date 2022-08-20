@@ -4,9 +4,9 @@ use rust_raytracing::*;
 
 const ASPECT_RATIO: f32 = 1.0;
 //16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 300;
+const SCREEN_WIDTH: u32 = 200;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 10;
+const SAMPLES_PER_PIXEL: u32 = 5;
 const MAX_DEPTH: u32 = 5;
 
 pub fn main() -> Result<(), String> {
@@ -27,7 +27,7 @@ pub fn main() -> Result<(), String> {
     lights.add_object(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
-        dummy_material.clone(),
+        dummy_material,
     )));
 
     let bvh = BVHNode::new(&world, 0.0, 1.0);
@@ -78,29 +78,10 @@ fn cornell_box() -> World {
         15.0, 15.0, 15.0,
     ))));
 
-    world.add_object(Arc::new(YZRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        555.0,
-        green.clone(),
-    )));
-    world.add_object(Arc::new(YZRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        0.0,
-        red.clone(),
-    )));
+    world.add_object(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
+    world.add_object(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
     world.add_object(Arc::new(FlipFace::new(Arc::new(XZRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
-        554.0,
-        light.clone(),
+        213.0, 343.0, 227.0, 332.0, 554.0, light,
     )))));
     world.add_object(Arc::new(XZRect::new(
         0.0,
@@ -131,7 +112,7 @@ fn cornell_box() -> World {
             Arc::new(Box3d::new(
                 Point3::new(0.0, 0.0, 0.0),
                 Point3::new(165.0, 330.0, 165.0),
-                white.clone(),
+                white,
             )),
             15.0,
         )),

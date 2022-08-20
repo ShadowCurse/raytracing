@@ -53,11 +53,11 @@ impl Material for Lambertian {
     }
     fn scattering_pdf(&self, _ray_in: &Ray, hit_record: &HitRecord, scattered: &Ray) -> f32 {
         let cosine = hit_record.normal.dot(&scattered.direction.unit());
-        return if cosine < 0.0 {
+        if cosine < 0.0 {
             0.0
         } else {
             cosine / std::f32::consts::PI
-        };
+        }
     }
 }
 
@@ -151,11 +151,11 @@ impl DiffuseLight {
 
 impl Material for DiffuseLight {
     fn emit(&self, _ray: &Ray, hit: &HitRecord, u: f32, v: f32, point: &Point3) -> Color {
-        return if hit.front_face {
+        if hit.front_face {
             self.emit.color(u, v, point)
         } else {
             Color::default()
-        };
+        }
     }
 }
 

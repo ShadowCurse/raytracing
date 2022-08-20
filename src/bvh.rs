@@ -100,7 +100,7 @@ impl Hittable for BVHNode {
     }
 
     fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(self.aabb.clone())
+        Some(self.aabb)
     }
 }
 

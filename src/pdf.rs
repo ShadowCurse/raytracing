@@ -24,11 +24,11 @@ impl CosinePdf {
 impl Pdf for CosinePdf {
     fn value(&self, direction: &Vec3) -> f32 {
         let cosine = direction.unit().dot(&self.uvw.w);
-        return if cosine <= 0.0 {
+        if cosine <= 0.0 {
             0.0
         } else {
             cosine / std::f32::consts::PI
-        };
+        }
     }
 
     fn generate(&self) -> Vec3 {
@@ -49,7 +49,7 @@ impl<'a> HittablePdf<'a> {
 
 impl<'a> Pdf for HittablePdf<'a> {
     fn value(&self, direction: &Vec3) -> f32 {
-        self.object.pdf_value(&self.origin, &direction)
+        self.object.pdf_value(&self.origin, direction)
     }
 
     fn generate(&self) -> Vec3 {
@@ -74,10 +74,10 @@ impl<'a> Pdf for MixturePdf<'a> {
     }
 
     fn generate(&self) -> Vec3 {
-        return if rand::thread_rng().gen_bool(0.5) {
+        if rand::thread_rng().gen_bool(0.5) {
             self.pdf1.generate()
         } else {
             self.pdf2.generate()
-        };
+        }
     }
 }

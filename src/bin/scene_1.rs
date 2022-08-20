@@ -3,10 +3,10 @@ use std::sync::Arc;
 use rust_raytracing::*;
 
 const ASPECT_RATIO: f32 = 16.0 / 9.0;
-const SCREEN_WIDTH: u32 = 500;
+const SCREEN_WIDTH: u32 = 200;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 100;
-const MAX_DEPTH: u32 = 50;
+const SAMPLES_PER_PIXEL: u32 = 10;
+const MAX_DEPTH: u32 = 10;
 
 pub fn main() -> Result<(), String> {
     let world = scene();

@@ -70,7 +70,7 @@ impl Hittable for Sphere {
             u,
             v,
             self.material.borrow(),
-            &ray,
+            ray,
             &outward_normal,
         ))
     }
@@ -83,7 +83,10 @@ impl Hittable for Sphere {
     }
 
     fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
-        if let Some(_) = self.hit(&Ray::new(*origin, *direction, 0.0), 0.001, f32::INFINITY) {
+        if self
+            .hit(&Ray::new(*origin, *direction, 0.0), 0.001, f32::INFINITY)
+            .is_some()
+        {
             let cos_theta_max =
                 (1.0 - self.radius.powi(2) / (self.center - origin).length_squared()).sqrt();
             let solid_angle = 2.0 * std::f32::consts::PI * (1.0 - cos_theta_max);
@@ -164,7 +167,7 @@ impl Hittable for MovingSphere {
             u,
             v,
             self.material.borrow(),
-            &ray,
+            ray,
             &outward_normal,
         ))
     }
@@ -225,7 +228,7 @@ impl Hittable for XYRect {
             u,
             v,
             self.material.borrow(),
-            &ray,
+            ray,
             &Vec3::new(0.0, 0.0, 1.0),
         ))
     }
@@ -286,7 +289,7 @@ impl Hittable for XZRect {
             u,
             v,
             self.material.borrow(),
-            &ray,
+            ray,
             &Vec3::new(0.0, 1.0, 0.0),
         ))
     }
@@ -366,7 +369,7 @@ impl Hittable for YZRect {
             u,
             v,
             self.material.borrow(),
-            &ray,
+            ray,
             &Vec3::new(1.0, 0.0, 0.0),
         ))
     }

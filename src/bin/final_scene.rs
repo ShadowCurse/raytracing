@@ -5,9 +5,9 @@ use rand::Rng;
 use rust_raytracing::*;
 
 const ASPECT_RATIO: f32 = 1.0;
-const SCREEN_WIDTH: u32 = 300;
+const SCREEN_WIDTH: u32 = 200;
 const SCREEN_HEIGHT: u32 = (SCREEN_WIDTH as f32 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u32 = 10;
+const SAMPLES_PER_PIXEL: u32 = 5;
 const MAX_DEPTH: u32 = 5;
 
 pub fn main() -> Result<(), String> {
@@ -125,7 +125,7 @@ fn final_scene() -> World {
 
     // world.add_object(boundary.clone());
     world.add_object(Arc::new(ConstantMedium::new(
-        boundary.clone(),
+        boundary,
         0.2,
         Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
             0.2, 0.4, 0.9,
@@ -138,7 +138,7 @@ fn final_scene() -> World {
         Arc::new(Dielectric::new(1.5)),
     ));
     world.add_object(Arc::new(ConstantMedium::new(
-        boundary.clone(),
+        boundary,
         0.0001,
         Arc::new(Lambertian::new(Arc::new(SolidTexture::from_rgb(
             1.0, 1.0, 1.0,

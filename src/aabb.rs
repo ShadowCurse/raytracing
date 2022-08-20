@@ -47,7 +47,7 @@ impl AABB {
         }
         t_min = t0.min(t_min);
         t_max = t1.max(t_max);
-        return if t_max <= t_min { false } else { true };
+        t_max > t_min
     }
 
     pub fn surrounding_box(box0: AABB, box1: AABB) -> AABB {

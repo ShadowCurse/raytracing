@@ -27,7 +27,7 @@ impl<'a> HitRecord<'a> {
         ray: &Ray,
         outward_normal: &Vec3,
     ) -> Self {
-        let front_face = ray.direction.dot(&outward_normal) < 0.0;
+        let front_face = ray.direction.dot(outward_normal) < 0.0;
         Self {
             point,
             normal: if front_face {
@@ -44,7 +44,7 @@ impl<'a> HitRecord<'a> {
     }
 
     pub fn scatter(&self, ray: &Ray) -> Option<ScatterRecord> {
-        self.material.unwrap().scatter(ray, &self)
+        self.material.unwrap().scatter(ray, self)
     }
 }
 
@@ -85,14 +85,9 @@ impl Hittable for Translate {
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
-        return if let Some(aabb) = self.object.bounding_box(time0, time1) {
-            Some(AABB::new(
-                aabb.minimum + self.offset,
-                aabb.maximum + self.offset,
-            ))
-        } else {
-            None
-        };
+        self.object
+            .bounding_box(time0, time1)
+            .map(|aabb| AABB::new(aabb.minimum + self.offset, aabb.maximum + self.offset))
     }
 }
 
@@ -232,12 +227,14 @@ impl Hittable for ConstantMedium {
                 let point = ray.at(t);
                 let normal = Vec3::new(1.0, 0.0, 0.0);
 
-                let mut record = HitRecord::default();
-                record.t = t;
-                record.point = point;
-                record.normal = normal;
-                record.front_face = true;
-                record.material = Some(self.phase_function.borrow());
+                let record = HitRecord {
+                    t,
+                    point,
+                    normal,
+                    front_face: true,
+                    material: Some(self.phase_function.borrow()),
+                    ..Default::default()
+                };
                 Some(record)
             } else {
                 None

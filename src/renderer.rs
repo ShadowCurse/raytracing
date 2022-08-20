@@ -185,6 +185,7 @@ impl<'a> Renderer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn render_tile(
         buffer: &mut [u8],
         top_left: (u32, u32),

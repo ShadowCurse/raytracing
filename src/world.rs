@@ -24,17 +24,17 @@ impl Hittable for World {
         let mut hit_anything = false;
         let mut closest = t_max;
         for obj in self.objects.iter() {
-            if let Some(record) = obj.hit(&ray, t_min, closest) {
+            if let Some(record) = obj.hit(ray, t_min, closest) {
                 hit_anything = true;
                 closest = record.t;
                 last_record = record;
             }
         }
-        return if hit_anything {
+        if hit_anything {
             Some(last_record)
         } else {
             None
-        };
+        }
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {

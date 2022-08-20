@@ -53,11 +53,11 @@ impl CheckerTexture {
 impl Texture for CheckerTexture {
     fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
         let sines = (10.0 * point.x).sin() * (10.0 * point.y).sin() * (10.0 * point.z).sin();
-        return if sines < 0.0 {
+        if sines < 0.0 {
             self.odd.color(u, v, point)
         } else {
             self.even.color(u, v, point)
-        };
+        }
     }
 }
 
@@ -69,7 +69,7 @@ pub struct NoiseTexture {
 impl NoiseTexture {
     pub fn new(scale: f32) -> Self {
         Self {
-            noise: Perlin::new(),
+            noise: Perlin::default(),
             scale,
         }
     }
