@@ -46,42 +46,41 @@ impl<'a> Renderer {
         camera: &Camera,
         lights: Option<&WithHittableTrait>,
     ) -> Result<(), String> {
-        let thread_num = 16;
-        let tile_height = self.screen_height / thread_num;
-
-        let screen_width = self.screen_width;
-        let screen_height = self.screen_height;
-        let samples_per_pixel = self.samples_per_pixel;
-        let max_depth = self.max_depth;
-        let background = self.background;
-
         let now = std::time::Instant::now();
 
-        crossbeam::scope(|spawner| {
-            self.buffer
+        std::thread::scope(|scope| {
+            let thread_num = 16;
+            let tile_height = self.screen_height / thread_num;
+
+            let screen_width = self.screen_width;
+            let screen_height = self.screen_height;
+            let samples_per_pixel = self.samples_per_pixel;
+            let max_depth = self.max_depth;
+            let background = self.background;
+
+            for (i, buff) in self
+                .buffer
                 .chunks_mut((tile_height * screen_width * 3) as usize)
                 .enumerate()
-                .map(|(i, buff)| {
-                    let bottom = ((thread_num - 1) - i as u32) * tile_height;
-                    let top = bottom + tile_height;
-                    spawner.spawn(move |_| {
-                        Self::render_tile(
-                            buff,
-                            (0, top),
-                            (screen_width, bottom),
-                            (screen_width, screen_height),
-                            hittable,
-                            camera,
-                            samples_per_pixel,
-                            max_depth,
-                            &background,
-                            lights,
-                        );
-                    })
-                })
-                .for_each(|_| {});
-        })
-            .map_err(|e| format!("crossbeam error: {:?}", e))?;
+            {
+                let bottom = ((thread_num - 1) - i as u32) * tile_height;
+                let top = bottom + tile_height;
+                scope.spawn(move || {
+                    Self::render_tile(
+                        buff,
+                        (0, top),
+                        (screen_width, bottom),
+                        (screen_width, screen_height),
+                        hittable,
+                        camera,
+                        samples_per_pixel,
+                        max_depth,
+                        &background,
+                        lights,
+                    );
+                });
+            }
+        });
 
         let delta = std::time::Instant::now() - now;
         println!("Rendered in {}ms", delta.as_millis());
@@ -114,6 +113,10 @@ impl<'a> Renderer {
             .update(None, &self.buffer, self.pitch as usize)
             .unwrap();
 
+        canvas.clear();
+        canvas.copy(&texture, None, None)?;
+        canvas.present();
+
         let mut event_pump = context.event_pump()?;
         'running: loop {
             for event in event_pump.poll_iter() {
@@ -126,9 +129,6 @@ impl<'a> Renderer {
                     _ => {}
                 }
             }
-            canvas.clear();
-            canvas.copy(&texture, None, None)?;
-            canvas.present();
         }
         Ok(())
     }
@@ -140,24 +140,24 @@ impl<'a> Renderer {
         background: &Color,
         lights: Option<&WithHittableTrait>,
     ) -> Color {
-        if max_depth <= 0 {
+        if max_depth == 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
-        return if let Some(hit) = hittable.hit(r, 0.001, f32::INFINITY) {
+        if let Some(hit) = hittable.hit(r, 0.001, f32::INFINITY) {
             let emitted = hit
                 .material
                 .unwrap()
                 .emit(r, &hit, hit.u, hit.v, &hit.point);
-            if let Some(scatter_rec) = hit.material.unwrap().scatter(&r, &hit) {
+            if let Some(scatter_rec) = hit.material.unwrap().scatter(r, &hit) {
                 if scatter_rec.is_specular {
                     return scatter_rec.attenuation
                         * Self::ray_color(
-                        &scatter_rec.specular_ray,
-                        hittable,
-                        max_depth - 1,
-                        background,
-                        lights,
-                    );
+                            &scatter_rec.specular_ray,
+                            hittable,
+                            max_depth - 1,
+                            background,
+                            lights,
+                        );
                 }
                 let (ray, pdf) = if let Some(lights) = lights {
                     let light_pdf = HittablePdf::new(lights, hit.point);
@@ -174,15 +174,15 @@ impl<'a> Renderer {
                 };
                 emitted
                     + scatter_rec.attenuation
-                    * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
-                    * Self::ray_color(&ray, hittable, max_depth - 1, background, lights)
-                    / pdf
+                        * hit.material.unwrap().scattering_pdf(r, &hit, &ray)
+                        * Self::ray_color(&ray, hittable, max_depth - 1, background, lights)
+                        / pdf
             } else {
                 emitted
             }
         } else {
             *background
-        };
+        }
     }
 
     fn render_tile(
@@ -235,16 +235,16 @@ impl<'a> Renderer {
     ) {
         let r = (255.999
             * (color.x / samples_per_pixel as f32)
-            .sqrt()
-            .clamp(0.0, 0.999)) as u8;
+                .sqrt()
+                .clamp(0.0, 0.999)) as u8;
         let g = (255.999
             * (color.y / samples_per_pixel as f32)
-            .sqrt()
-            .clamp(0.0, 0.999)) as u8;
+                .sqrt()
+                .clamp(0.0, 0.999)) as u8;
         let b = (255.999
             * (color.z / samples_per_pixel as f32)
-            .sqrt()
-            .clamp(0.0, 0.999)) as u8;
+                .sqrt()
+                .clamp(0.0, 0.999)) as u8;
 
         let pitch = (bot_right.0 - top_left.0) * 3;
         let offset = (top_left.1 - 1 - y) as usize * pitch as usize + x as usize * 3; // for OpenGl reverse y coord
