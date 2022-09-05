@@ -10,3 +10,15 @@ debug = true
 sdl2 = "0.34.5"
 rand = "0.8.3"
 image = "0.23.14"
+
+[[example]]
+name = "cornel_box"
+path = "examples/cornel_box.rs"
+
+[[example]]
+name = "final_scene"
+path = "examples/final_scene.rs"
+
+[[example]]
+name = "spheres"
+path = "examples/spheres.rs"

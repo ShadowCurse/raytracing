@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use rand::Rng;
 
+use crate::{World3, Add};
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::WithMaterialTrait;
 use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
-use crate::world::World;
 
 pub struct Sphere {
     pub center: Point3,
@@ -172,10 +172,12 @@ impl Hittable for MovingSphere {
         ))
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
+    fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<AABB> {
         let r = Vec3::new(self.radius, self.radius, self.radius);
-        let box0 = AABB::new(self.center(time0) - r, self.center(time0) + r);
-        let box1 = AABB::new(self.center(time1) - r, self.center(time1) + r);
+        // let box0 = AABB::new(self.center(time0) - r, self.center(time0) + r);
+        // let box1 = AABB::new(self.center(time1) - r, self.center(time1) + r);
+        let box0 = AABB::new(self.center0 - r, self.center0 + r);
+        let box1 = AABB::new(self.center1 - r, self.center1 + r);
         Some(AABB::surrounding_box(box0, box1))
     }
 }
@@ -385,63 +387,63 @@ impl Hittable for YZRect {
 pub struct Box3d {
     pub min: Point3,
     pub max: Point3,
-    pub sides: World,
+    pub sides: World3,
 }
 
 impl Box3d {
     pub fn new(min: Point3, max: Point3, material: Arc<WithMaterialTrait>) -> Self {
-        let mut world = World::default();
+        let mut world = World3::default();
 
-        world.add_object(Arc::new(XYRect::new(
+        world.add(XYRect::new(
             min.x,
             max.x,
             min.y,
             max.y,
             max.z,
             material.clone(),
-        )));
-        world.add_object(Arc::new(XYRect::new(
+        ));
+        world.add(XYRect::new(
             min.x,
             max.x,
             min.y,
             max.y,
             min.z,
             material.clone(),
-        )));
+       ));
 
-        world.add_object(Arc::new(XZRect::new(
+        world.add(XZRect::new(
             min.x,
             max.x,
             min.z,
             max.z,
             max.y,
             material.clone(),
-        )));
-        world.add_object(Arc::new(XZRect::new(
+        ));
+        world.add(XZRect::new(
             min.x,
             max.x,
             min.z,
             max.z,
             min.y,
             material.clone(),
-        )));
+        ));
 
-        world.add_object(Arc::new(YZRect::new(
+        world.add(YZRect::new(
             min.y,
             max.y,
             min.z,
             max.z,
             max.x,
             material.clone(),
-        )));
-        world.add_object(Arc::new(YZRect::new(
+        ));
+        world.add(YZRect::new(
             min.y,
             max.y,
             min.z,
             max.z,
             min.x,
             material.clone(),
-        )));
+        ));
 
         Self {
             min,
