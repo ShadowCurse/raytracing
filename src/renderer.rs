@@ -6,10 +6,10 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::PixelFormatEnum;
 
 use crate::camera::Camera;
-use crate::hittable::WithHittableTrait;
 use crate::pdf::{HittablePdf, MixturePdf, Pdf};
 use crate::ray::Ray;
 use crate::vec3::Color;
+use crate::Hittable;
 
 pub struct Renderer {
     screen_width: u32,
@@ -40,16 +40,20 @@ impl<'a> Renderer {
         })
     }
 
-    pub fn render(
+    pub fn render<H, L>(
         &mut self,
-        hittable: &WithHittableTrait,
+        hittable: &H,
         camera: &Camera,
-        lights: Option<&WithHittableTrait>,
-    ) -> Result<(), String> {
+        lights: Option<&L>,
+    ) -> Result<(), String>
+    where
+        H: Hittable,
+        L: Hittable,
+    {
         let now = std::time::Instant::now();
 
         std::thread::scope(|scope| {
-            let thread_num = 16;
+            let thread_num = std::thread::available_parallelism().unwrap().get() as u32;
             let tile_height = self.screen_height / thread_num;
 
             let screen_width = self.screen_width;
@@ -135,10 +139,10 @@ impl<'a> Renderer {
 
     fn ray_color(
         r: &Ray,
-        hittable: &WithHittableTrait,
+        hittable: &impl Hittable,
         max_depth: u32,
         background: &Color,
-        lights: Option<&WithHittableTrait>,
+        lights: Option<&impl Hittable>,
     ) -> Color {
         if max_depth == 0 {
             return Color::new(0.0, 0.0, 0.0);
@@ -191,12 +195,12 @@ impl<'a> Renderer {
         top_left: (u32, u32),
         bot_right: (u32, u32),
         window_size: (u32, u32),
-        hittable: &'a WithHittableTrait,
+        hittable: &'a impl Hittable,
         camera: &Camera,
         samples_per_pixel: u32,
         max_depth: u32,
         background: &Color,
-        lights: Option<&WithHittableTrait>,
+        lights: Option<&impl Hittable>,
     ) {
         println!(
             "rendering buffer x_range: {:?}, y_range: {:?}",

@@ -36,8 +36,8 @@ pub fn main() -> Result<(), String> {
         MAX_DEPTH,
         Color::new(0.8, 0.8, 0.8),
     )?;
-    renderer.render(&world, &camera, None)?;
-    renderer.present()?;
+    renderer.render::<World3, World3>(&world, &camera, None)?;
+    // renderer.present()?;
     Ok(())
 }
 

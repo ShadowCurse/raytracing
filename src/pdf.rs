@@ -1,8 +1,8 @@
 use rand::Rng;
 
-use crate::hittable::WithHittableTrait;
 use crate::onb::Onb;
 use crate::vec3::{Point3, Vec3};
+use crate::Hittable;
 
 pub trait Pdf {
     fn value(&self, direction: &Vec3) -> f32;
@@ -36,18 +36,27 @@ impl Pdf for CosinePdf {
     }
 }
 
-pub struct HittablePdf<'a> {
-    pub object: &'a WithHittableTrait,
+pub struct HittablePdf<'a, T>
+where
+    T: Hittable,
+{
+    pub object: &'a T,
     pub origin: Point3,
 }
 
-impl<'a> HittablePdf<'a> {
-    pub fn new(object: &'a WithHittableTrait, origin: Point3) -> Self {
+impl<'a, T> HittablePdf<'a, T>
+where
+    T: Hittable,
+{
+    pub fn new(object: &'a T, origin: Point3) -> Self {
         Self { object, origin }
     }
 }
 
-impl<'a> Pdf for HittablePdf<'a> {
+impl<'a, T> Pdf for HittablePdf<'a, T>
+where
+    T: Hittable,
+{
     fn value(&self, direction: &Vec3) -> f32 {
         self.object.pdf_value(&self.origin, direction)
     }

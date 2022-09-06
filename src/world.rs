@@ -3,14 +3,19 @@ use std::sync::Arc;
 use rand::Rng;
 
 use crate::aabb::AABB;
-use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
-use crate::{objects::*, FlipFace, ConstantMedium, Translate};
 use crate::bvh::*;
+use crate::hittable::{HitRecord, Hittable, WithHittableTrait};
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
+use crate::{objects::*, ConstantMedium, FlipFace, Translate};
 
 macro_rules! declare_world {
-    ($($element: ident: $ty: ty),*) => {
+    ($($element: ident: $ty: ident),*) => {
+        #[derive(Debug, Clone, Copy)]
+        pub enum WorldIndex {
+            $($ty(usize)),*
+        }
+
         pub trait Add<T> {
             fn add(&mut self, object: T);
         }
@@ -19,6 +24,23 @@ macro_rules! declare_world {
         pub struct World3 {
             aabb: AABB,
             $($element: Vec<$ty>),*
+        }
+
+        impl World3 {
+            pub fn hit_object(&self, index: WorldIndex, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+                match index {
+                    $(WorldIndex::$ty(index) => self.$element[index].hit(ray, t_min, t_max)),*
+                }
+            }
+
+            pub fn volumes(&self) -> Vec<(WorldIndex, AABB)> {
+                let mut ret = Vec::new();
+                $(for (index, obj) in self.$element.iter().enumerate() {
+                    ret.push((WorldIndex::$ty(index), obj.bounding_box(0.0, 0.0).unwrap())); 
+                })*
+                ret
+
+            }
         }
 
         $(impl Add<$ty> for World3 {
