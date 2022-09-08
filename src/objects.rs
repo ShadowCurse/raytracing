@@ -1,20 +1,16 @@
-use std::borrow::Borrow;
-use std::sync::Arc;
-
-use rand::Rng;
-
-use crate::{World3, Add};
 use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
-use crate::material::WithMaterialTrait;
 use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::vec3::{Point3, Vec3};
+use crate::Material;
+use rand::Rng;
+use std::borrow::Borrow;
 
-pub struct Sphere {
+pub struct Sphere<M: Material> {
     pub center: Point3,
     pub radius: f32,
-    pub material: Arc<WithMaterialTrait>,
+    pub material: M,
 }
 
 fn get_sphere_uv(point: &Point3) -> (f32, f32) {
@@ -30,8 +26,8 @@ fn get_sphere_uv(point: &Point3) -> (f32, f32) {
     (phi / (2.0 * PI), theta / PI)
 }
 
-impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Arc<WithMaterialTrait>) -> Self {
+impl<M: Material> Sphere<M> {
+    pub fn new(center: Point3, radius: f32, material: M) -> Self {
         Self {
             center,
             radius,
@@ -40,7 +36,7 @@ impl Sphere {
     }
 }
 
-impl Hittable for Sphere {
+impl<M: Material> Hittable for Sphere<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let os = ray.origin - self.center;
         let a = ray.direction.length_squared();
@@ -69,7 +65,7 @@ impl Hittable for Sphere {
             root,
             u,
             v,
-            self.material.borrow(),
+            &self.material,
             ray,
             &outward_normal,
         ))
@@ -103,23 +99,23 @@ impl Hittable for Sphere {
     }
 }
 
-pub struct MovingSphere {
+pub struct MovingSphere<M: Material> {
     pub center0: Point3,
     pub center1: Point3,
     pub time0: f32,
     pub time1: f32,
     pub radius: f32,
-    pub material: Arc<WithMaterialTrait>,
+    pub material: M,
 }
 
-impl MovingSphere {
+impl<M: Material> MovingSphere<M> {
     pub fn new(
         center0: Point3,
         center1: Point3,
         time0: f32,
         time1: f32,
         radius: f32,
-        material: Arc<WithMaterialTrait>,
+        material: M,
     ) -> Self {
         Self {
             center0,
@@ -137,7 +133,7 @@ impl MovingSphere {
     }
 }
 
-impl Hittable for MovingSphere {
+impl<M: Material> Hittable for MovingSphere<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let os = ray.origin - self.center(ray.time);
         let a = ray.direction.length_squared();
@@ -182,24 +178,17 @@ impl Hittable for MovingSphere {
     }
 }
 
-pub struct XYRect {
+pub struct XYRect<M: Material> {
     pub x0: f32,
     pub x1: f32,
     pub y0: f32,
     pub y1: f32,
     pub k: f32,
-    pub material: Arc<WithMaterialTrait>,
+    pub material: M,
 }
 
-impl XYRect {
-    pub fn new(
-        x0: f32,
-        x1: f32,
-        y0: f32,
-        y1: f32,
-        k: f32,
-        material: Arc<WithMaterialTrait>,
-    ) -> Self {
+impl<M: Material> XYRect<M> {
+    pub fn new(x0: f32, x1: f32, y0: f32, y1: f32, k: f32, material: M) -> Self {
         Self {
             x0,
             x1,
@@ -211,7 +200,7 @@ impl XYRect {
     }
 }
 
-impl Hittable for XYRect {
+impl<M: Material> Hittable for XYRect<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.z) / ray.direction.z;
         if t < t_min || t > t_max {
@@ -243,24 +232,17 @@ impl Hittable for XYRect {
     }
 }
 
-pub struct XZRect {
+pub struct XZRect<M: Material> {
     pub x0: f32,
     pub x1: f32,
     pub z0: f32,
     pub z1: f32,
     pub k: f32,
-    pub material: Arc<WithMaterialTrait>,
+    pub material: M,
 }
 
-impl XZRect {
-    pub fn new(
-        x0: f32,
-        x1: f32,
-        z0: f32,
-        z1: f32,
-        k: f32,
-        material: Arc<WithMaterialTrait>,
-    ) -> Self {
+impl<M: Material> XZRect<M> {
+    pub fn new(x0: f32, x1: f32, z0: f32, z1: f32, k: f32, material: M) -> Self {
         Self {
             x0,
             x1,
@@ -272,7 +254,7 @@ impl XZRect {
     }
 }
 
-impl Hittable for XZRect {
+impl<M: Material> Hittable for XZRect<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.y) / ray.direction.y;
         if t < t_min || t > t_max {
@@ -323,24 +305,17 @@ impl Hittable for XZRect {
     }
 }
 
-pub struct YZRect {
+pub struct YZRect<M: Material> {
     pub y0: f32,
     pub y1: f32,
     pub z0: f32,
     pub z1: f32,
     pub k: f32,
-    pub material: Arc<WithMaterialTrait>,
+    pub material: M,
 }
 
-impl YZRect {
-    pub fn new(
-        y0: f32,
-        y1: f32,
-        z0: f32,
-        z1: f32,
-        k: f32,
-        material: Arc<WithMaterialTrait>,
-    ) -> Self {
+impl<M: Material> YZRect<M> {
+    pub fn new(y0: f32, y1: f32, z0: f32, z1: f32, k: f32, material: M) -> Self {
         Self {
             y0,
             y1,
@@ -352,7 +327,7 @@ impl YZRect {
     }
 }
 
-impl Hittable for YZRect {
+impl<M: Material> Hittable for YZRect<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.x) / ray.direction.x;
         if t < t_min || t > t_max {
@@ -384,78 +359,75 @@ impl Hittable for YZRect {
     }
 }
 
-pub struct Box3d {
+pub struct Box3d<M: Material> {
     pub min: Point3,
     pub max: Point3,
-    pub sides: World3,
+    // pub sides: World3,
+    pub xy_min: XYRect<M>,
+    // pub xy_max: XYRect<M>,
+    // pub xz_min: XZRect<M>,
+    // pub xz_max: XZRect<M>,
+    // pub yz_min: YZRect<M>,
+    // pub yz_max: YZRect<M>,
 }
 
-impl Box3d {
-    pub fn new(min: Point3, max: Point3, material: Arc<WithMaterialTrait>) -> Self {
-        let mut world = World3::default();
-
-        world.add(XYRect::new(
-            min.x,
-            max.x,
-            min.y,
-            max.y,
-            max.z,
-            material.clone(),
-        ));
-        world.add(XYRect::new(
-            min.x,
-            max.x,
-            min.y,
-            max.y,
-            min.z,
-            material.clone(),
-       ));
-
-        world.add(XZRect::new(
-            min.x,
-            max.x,
-            min.z,
-            max.z,
-            max.y,
-            material.clone(),
-        ));
-        world.add(XZRect::new(
-            min.x,
-            max.x,
-            min.z,
-            max.z,
-            min.y,
-            material.clone(),
-        ));
-
-        world.add(YZRect::new(
-            min.y,
-            max.y,
-            min.z,
-            max.z,
-            max.x,
-            material.clone(),
-        ));
-        world.add(YZRect::new(
-            min.y,
-            max.y,
-            min.z,
-            max.z,
-            min.x,
-            material.clone(),
-        ));
-
+impl<M: Material> Box3d<M> {
+    pub fn new(min: Point3, max: Point3, material: M) -> Self {
         Self {
             min,
             max,
-            sides: world,
+            xy_min: XYRect::new(min.x, max.x, min.y, max.y, max.z, material),
+            // xy_max: XYRect::new(min.x, max.x, min.y, max.y, min.z, material),
+            //
+            // xz_min: XZRect::new(min.x, max.x, min.z, max.z, min.y, material),
+            // xz_max: XZRect::new(min.x, max.x, min.z, max.z, max.y, material),
+            //
+            // yz_min: YZRect::new(min.y, max.y, min.z, max.z, min.x, material),
+            // yz_max: YZRect::new(min.y, max.y, min.z, max.z, max.x, material),
         }
     }
 }
 
-impl Hittable for Box3d {
+impl<M: Material> Hittable for Box3d<M> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        self.sides.hit(ray, t_min, t_max)
+        let mut last_record = HitRecord::default();
+        let mut hit_anything = false;
+        let mut closest = t_max;
+        if let Some(record) = self.xy_min.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
+        // if let Some(record) = self.xy_max.hit(ray, t_min, closest) {
+        //     hit_anything = true;
+        //     closest = record.t;
+        //     last_record = record;
+        // }
+        // if let Some(record) = self.xz_min.hit(ray, t_min, closest) {
+        //     hit_anything = true;
+        //     closest = record.t;
+        //     last_record = record;
+        // }
+        // if let Some(record) = self.xz_max.hit(ray, t_min, closest) {
+        //     hit_anything = true;
+        //     closest = record.t;
+        //     last_record = record;
+        // }
+        // if let Some(record) = self.yz_min.hit(ray, t_min, closest) {
+        //     hit_anything = true;
+        //     closest = record.t;
+        //     last_record = record;
+        // }
+        // if let Some(record) = self.yz_max.hit(ray, t_min, closest) {
+        //     hit_anything = true;
+        //     closest = record.t;
+        //     last_record = record;
+        // }
+        if hit_anything {
+            Some(last_record)
+        } else {
+            None
+        }
     }
 
     fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {

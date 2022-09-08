@@ -16,9 +16,7 @@ pub struct ScatterRecord {
     pub pdf: Option<Box<dyn Pdf>>,
 }
 
-pub type WithMaterialTrait = dyn Material + Sync + Send;
-
-pub trait Material: Sync + Send {
+pub trait Material {
     fn scatter(&self, _ray_in: &Ray, _hit_record: &HitRecord) -> Option<ScatterRecord> {
         None
     }

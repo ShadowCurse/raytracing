@@ -47,8 +47,8 @@ impl<'a> Renderer {
         lights: Option<&L>,
     ) -> Result<(), String>
     where
-        H: Hittable,
-        L: Hittable,
+        H: Hittable + Sync,
+        L: Hittable + Sync,
     {
         let now = std::time::Instant::now();
 
