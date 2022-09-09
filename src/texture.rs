@@ -1,11 +1,6 @@
-use std::sync::Arc;
-
-use image::GenericImageView;
-
 use crate::perlin::Perlin;
 use crate::vec3::{Color, Point3};
-
-pub type WithTexture = dyn Texture + Send + Sync;
+use image::GenericImageView;
 
 pub trait Texture {
     fn color(&self, u: f32, v: f32, point: &Point3) -> Color;
@@ -33,24 +28,27 @@ impl Texture for SolidTexture {
     }
 }
 
-pub struct CheckerTexture {
-    odd: Arc<WithTexture>,
-    even: Arc<WithTexture>,
+pub struct CheckerTexture<O: Texture, E: Texture> {
+    odd: O,
+    even: E,
 }
 
-impl CheckerTexture {
-    pub fn from_textures(odd: Arc<WithTexture>, even: Arc<WithTexture>) -> Self {
+impl<O: Texture, E: Texture> CheckerTexture<O, E> {
+    pub fn from_textures(odd: O, even: E) -> Self {
         Self { odd, even }
     }
+}
+
+impl CheckerTexture<SolidTexture, SolidTexture> {
     pub fn from_colors(odd: Color, even: Color) -> Self {
         Self {
-            odd: Arc::new(SolidTexture::from_color(odd)),
-            even: Arc::new(SolidTexture::from_color(even)),
+            odd: SolidTexture::from_color(odd),
+            even: SolidTexture::from_color(even),
         }
     }
 }
 
-impl Texture for CheckerTexture {
+impl<O: Texture, E: Texture> Texture for CheckerTexture<O, E> {
     fn color(&self, u: f32, v: f32, point: &Point3) -> Color {
         let sines = (10.0 * point.x).sin() * (10.0 * point.y).sin() * (10.0 * point.z).sin();
         if sines < 0.0 {

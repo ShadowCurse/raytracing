@@ -1,12 +1,9 @@
-use std::sync::Arc;
-
-use rand::Rng;
-
 use crate::hittable::HitRecord;
 use crate::pdf::{CosinePdf, Pdf};
 use crate::ray::Ray;
-use crate::texture::WithTexture;
 use crate::vec3::{Color, Point3, Vec3};
+use crate::Texture;
+use rand::Rng;
 
 #[derive(Default)]
 pub struct ScatterRecord {
@@ -28,17 +25,18 @@ pub trait Material {
     }
 }
 
-pub struct Lambertian {
-    pub albedo: Arc<WithTexture>,
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Lambertian<T: Texture> {
+    pub albedo: T,
 }
 
-impl Lambertian {
-    pub fn new(albedo: Arc<WithTexture>) -> Self {
+impl<T: Texture> Lambertian<T> {
+    pub fn new(albedo: T) -> Self {
         Self { albedo }
     }
 }
 
-impl Material for Lambertian {
+impl<T: Texture> Material for Lambertian<T> {
     fn scatter(&self, _: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         Some(ScatterRecord {
             is_specular: false,
@@ -59,13 +57,14 @@ impl Material for Lambertian {
     }
 }
 
-pub struct Metal {
-    pub albedo: Arc<WithTexture>,
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Metal<T: Texture> {
+    pub albedo: T,
     pub fuzz: f32,
 }
 
-impl Metal {
-    pub fn new(albedo: Arc<WithTexture>, fuzz: f32) -> Self {
+impl<T: Texture> Metal<T> {
+    pub fn new(albedo: T, fuzz: f32) -> Self {
         Self {
             albedo,
             fuzz: if fuzz < 1.0 { fuzz } else { 1.0 },
@@ -73,7 +72,7 @@ impl Metal {
     }
 }
 
-impl Material for Metal {
+impl<T: Texture> Material for Metal<T> {
     fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<ScatterRecord> {
         let reflected = ray.direction.unit().reflect(&hit_record.normal);
         Some(ScatterRecord {
@@ -91,6 +90,7 @@ impl Material for Metal {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Dielectric {
     index_of_refraction: f32,
 }
@@ -137,17 +137,18 @@ impl Material for Dielectric {
     }
 }
 
-pub struct DiffuseLight {
-    pub emit: Arc<WithTexture>,
+#[derive(Default, Debug, Clone, Copy)]
+pub struct DiffuseLight<T: Texture> {
+    pub emit: T,
 }
 
-impl DiffuseLight {
-    pub fn new(emit: Arc<WithTexture>) -> Self {
+impl<T: Texture> DiffuseLight<T> {
+    pub fn new(emit: T) -> Self {
         Self { emit }
     }
 }
 
-impl Material for DiffuseLight {
+impl<T: Texture> Material for DiffuseLight<T> {
     fn emit(&self, _ray: &Ray, hit: &HitRecord, u: f32, v: f32, point: &Point3) -> Color {
         if hit.front_face {
             self.emit.color(u, v, point)
@@ -157,17 +158,18 @@ impl Material for DiffuseLight {
     }
 }
 
-pub struct Isotropic {
-    pub albedo: Arc<WithTexture>,
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Isotropic<T: Texture> {
+    pub albedo: T,
 }
 
-impl Isotropic {
-    pub fn new(texture: Arc<WithTexture>) -> Self {
+impl<T: Texture> Isotropic<T> {
+    pub fn new(texture: T) -> Self {
         Self { albedo: texture }
     }
 }
 
-impl Material for Isotropic {
+impl<T: Texture> Material for Isotropic<T> {
     // fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
     //     Some((
     //         Ray::new(hit_record.point, Vec3::random_in_unit_sphere(), ray.time),

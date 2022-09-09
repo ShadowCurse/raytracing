@@ -7,6 +7,7 @@ use crate::Material;
 use rand::Rng;
 use std::borrow::Borrow;
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Sphere<M: Material> {
     pub center: Point3,
     pub radius: f32,
@@ -99,6 +100,7 @@ impl<M: Material> Hittable for Sphere<M> {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct MovingSphere<M: Material> {
     pub center0: Point3,
     pub center1: Point3,
@@ -178,6 +180,7 @@ impl<M: Material> Hittable for MovingSphere<M> {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct XYRect<M: Material> {
     pub x0: f32,
     pub x1: f32,
@@ -232,6 +235,7 @@ impl<M: Material> Hittable for XYRect<M> {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct XZRect<M: Material> {
     pub x0: f32,
     pub x1: f32,
@@ -305,6 +309,7 @@ impl<M: Material> Hittable for XZRect<M> {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct YZRect<M: Material> {
     pub y0: f32,
     pub y1: f32,
@@ -359,31 +364,31 @@ impl<M: Material> Hittable for YZRect<M> {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Box3d<M: Material> {
     pub min: Point3,
     pub max: Point3,
-    // pub sides: World3,
     pub xy_min: XYRect<M>,
-    // pub xy_max: XYRect<M>,
-    // pub xz_min: XZRect<M>,
-    // pub xz_max: XZRect<M>,
-    // pub yz_min: YZRect<M>,
-    // pub yz_max: YZRect<M>,
+    pub xy_max: XYRect<M>,
+    pub xz_min: XZRect<M>,
+    pub xz_max: XZRect<M>,
+    pub yz_min: YZRect<M>,
+    pub yz_max: YZRect<M>,
 }
 
-impl<M: Material> Box3d<M> {
+impl<M: Material + Copy> Box3d<M> {
     pub fn new(min: Point3, max: Point3, material: M) -> Self {
         Self {
             min,
             max,
             xy_min: XYRect::new(min.x, max.x, min.y, max.y, max.z, material),
-            // xy_max: XYRect::new(min.x, max.x, min.y, max.y, min.z, material),
-            //
-            // xz_min: XZRect::new(min.x, max.x, min.z, max.z, min.y, material),
-            // xz_max: XZRect::new(min.x, max.x, min.z, max.z, max.y, material),
-            //
-            // yz_min: YZRect::new(min.y, max.y, min.z, max.z, min.x, material),
-            // yz_max: YZRect::new(min.y, max.y, min.z, max.z, max.x, material),
+            xy_max: XYRect::new(min.x, max.x, min.y, max.y, min.z, material),
+
+            xz_min: XZRect::new(min.x, max.x, min.z, max.z, min.y, material),
+            xz_max: XZRect::new(min.x, max.x, min.z, max.z, max.y, material),
+
+            yz_min: YZRect::new(min.y, max.y, min.z, max.z, min.x, material),
+            yz_max: YZRect::new(min.y, max.y, min.z, max.z, max.x, material),
         }
     }
 }
@@ -398,31 +403,31 @@ impl<M: Material> Hittable for Box3d<M> {
             closest = record.t;
             last_record = record;
         }
-        // if let Some(record) = self.xy_max.hit(ray, t_min, closest) {
-        //     hit_anything = true;
-        //     closest = record.t;
-        //     last_record = record;
-        // }
-        // if let Some(record) = self.xz_min.hit(ray, t_min, closest) {
-        //     hit_anything = true;
-        //     closest = record.t;
-        //     last_record = record;
-        // }
-        // if let Some(record) = self.xz_max.hit(ray, t_min, closest) {
-        //     hit_anything = true;
-        //     closest = record.t;
-        //     last_record = record;
-        // }
-        // if let Some(record) = self.yz_min.hit(ray, t_min, closest) {
-        //     hit_anything = true;
-        //     closest = record.t;
-        //     last_record = record;
-        // }
-        // if let Some(record) = self.yz_max.hit(ray, t_min, closest) {
-        //     hit_anything = true;
-        //     closest = record.t;
-        //     last_record = record;
-        // }
+        if let Some(record) = self.xy_max.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
+        if let Some(record) = self.xz_min.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
+        if let Some(record) = self.xz_max.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
+        if let Some(record) = self.yz_min.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
+        if let Some(record) = self.yz_max.hit(ray, t_min, closest) {
+            hit_anything = true;
+            closest = record.t;
+            last_record = record;
+        }
         if hit_anything {
             Some(last_record)
         } else {
