@@ -21,10 +21,12 @@ impl BlobVec {
         }
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
+    #[inline]
     pub unsafe fn add<T>(&mut self, object: T) {
         assert!(
             self.layout == Layout::new::<T>(),
@@ -37,12 +39,22 @@ impl BlobVec {
         std::mem::forget(object);
     }
 
+    #[inline]
     pub unsafe fn get(&self, index: usize) -> &() {
         let data_index = index * self.layout.size();
         std::mem::transmute(&self.data[data_index])
     }
-}
 
+    #[inline]
+    pub unsafe fn as_slice<T>(&self) -> &[T] {
+        assert!(
+            self.layout == Layout::new::<T>(),
+            "casting to type with different layout"
+        );
+        let ptr: *const T = std::mem::transmute(self.data.as_ptr());
+        std::slice::from_raw_parts(ptr, self.len)
+    }
+}
 
 pub struct HittableVTable {
     pub hit: for<'a, 'b> fn(&'a (), &'b Ray, f32, f32) -> Option<HitRecord<'a>>,
@@ -63,55 +75,53 @@ impl HittableVTable {
 }
 
 #[derive(Default)]
-pub struct ObjectStore {
+pub struct World {
     aabb: AABB,
-    types: HashMap<TypeId, (HittableVTable, BlobVec)>,
+    types: HashMap<TypeId, usize>,
+    data: Vec<(HittableVTable, BlobVec)>,
 }
 
-impl ObjectStore {
-    pub fn register_type<T: Hittable + 'static>(&mut self) {
-        let id = TypeId::of::<T>();
-        let vtable = unsafe { HittableVTable::new::<T>() };
-        let blob_vec = BlobVec::new(Layout::new::<T>());
-        self.types.insert(id, (vtable, blob_vec));
-    }
+impl World {
 
     pub fn add<T: Hittable + 'static>(&mut self, object: T) {
         let id = TypeId::of::<T>();
-        assert!(
-            self.types.contains_key(&id),
-            "type: {:?} should be registered before usage",
-            std::any::type_name::<T>()
-        );
+        if !self.types.contains_key(&id) { 
+            let vtable = unsafe { HittableVTable::new::<T>() };
+            let blob_vec = BlobVec::new(Layout::new::<T>());
+            self.data.push((vtable, blob_vec));
+            self.types.insert(id, self.data.len() - 1);
+        };
         self.aabb = AABB::surrounding_box(self.aabb, unsafe {
             object.bounding_box(0.0, 0.0).unwrap_unchecked()
         });
-        let (_vtable, blob_vec) = self.types.get_mut(&id).unwrap();
+        let index = self.types[&id];
+        let (_vtable, blob_vec) = &mut self.data[index];
         unsafe { blob_vec.add(object) };
     }
 
+    #[inline]
     pub fn hit_object(
         &self,
-        id: TypeId,
+        data_index: usize,
         index: usize,
         ray: Ray,
         t_min: f32,
         t_max: f32,
     ) -> Option<HitRecord> {
-        let (vtable, blob_vec) = &self.types[&id];
+        let (vtable, blob_vec) = &self.data[data_index];
         let ptr = unsafe { blob_vec.get(index) };
         (vtable.hit)(ptr, &ray, t_min, t_max)
     }
 }
 
-impl Hittable for ObjectStore {
+impl Hittable for World {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut last_record = HitRecord::default();
         let mut hit_anything = false;
         let mut closest = t_max;
-        for t in self.types.keys() {
-            for i in 0..self.types[t].1.len() {
-                if let Some(record) = self.hit_object(*t, i, *ray, t_min, closest) {
+        for (di, (_, blob)) in self.data.iter().enumerate() {
+            for i in 0..blob.len() {
+                if let Some(record) = self.hit_object(di, i, *ray, t_min, closest) {
                     hit_anything = true;
                     closest = record.t;
                     last_record = record;
@@ -185,5 +195,23 @@ mod test {
         let ptr = unsafe { blob.get(1) };
         let ptr: *const u8 = ptr as *const () as *const u8;
         assert_eq!(ptr, &blob.data[4] as *const u8);
+    }
+
+    #[test]
+    fn blob_as_slice() {
+        let layout = Layout::new::<u32>();
+        let mut blob = BlobVec::new(layout);
+
+        let val: u32 = 0;
+        unsafe { blob.add(val) };
+        let slice = unsafe { blob.as_slice::<u32>() };
+
+        assert_eq!(slice, &[0]);
+
+        let val: u32 = 32;
+        unsafe { blob.add(val) };
+        let slice = unsafe { blob.as_slice::<u32>() };
+
+        assert_eq!(slice, &[0, 32]);
     }
 }
