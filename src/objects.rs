@@ -72,11 +72,11 @@ impl<M: Material> Hittable for Sphere<M> {
         ))
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             self.center - Vec3::new(self.radius, self.radius, self.radius),
             self.center + Vec3::new(self.radius, self.radius, self.radius),
-        ))
+        )
     }
 
     fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
@@ -170,13 +170,13 @@ impl<M: Material> Hittable for MovingSphere<M> {
         ))
     }
 
-    fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<AABB> {
+    fn bounding_box(&self) -> AABB {
         let r = Vec3::new(self.radius, self.radius, self.radius);
         // let box0 = AABB::new(self.center(time0) - r, self.center(time0) + r);
         // let box1 = AABB::new(self.center(time1) - r, self.center(time1) + r);
         let box0 = AABB::new(self.center0 - r, self.center0 + r);
         let box1 = AABB::new(self.center1 - r, self.center1 + r);
-        Some(AABB::surrounding_box(box0, box1))
+        AABB::surrounding_box(box0, box1)
     }
 }
 
@@ -227,11 +227,11 @@ impl<M: Material> Hittable for XYRect<M> {
         ))
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Point3::new(self.x0, self.y0, self.k - 0.00001),
             Point3::new(self.x1, self.y1, self.k + 0.00001),
-        ))
+        )
     }
 }
 
@@ -282,11 +282,11 @@ impl<M: Material> Hittable for XZRect<M> {
         ))
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Point3::new(self.x0, self.k - 0.00001, self.z0),
             Point3::new(self.x1, self.k + 0.00001, self.z1),
-        ))
+        )
     }
 
     fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
@@ -356,11 +356,11 @@ impl<M: Material> Hittable for YZRect<M> {
         ))
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(AABB::new(
+    fn bounding_box(&self) -> AABB {
+        AABB::new(
             Point3::new(self.k - 0.00001, self.y0, self.z0),
             Point3::new(self.k + 0.00001, self.y1, self.z1),
-        ))
+        )
     }
 }
 
@@ -435,7 +435,7 @@ impl<M: Material> Hittable for Box3d<M> {
         }
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(AABB::new(self.min, self.max))
+    fn bounding_box(&self) -> AABB {
+        AABB::new(self.min, self.max)
     }
 }

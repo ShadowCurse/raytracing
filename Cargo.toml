@@ -22,3 +22,7 @@ path = "examples/final_scene.rs"
 [[example]]
 name = "spheres"
 path = "examples/spheres.rs"
+
+[[example]]
+name = "spheres_bvh"
+path = "examples/spheres_bvh.rs"

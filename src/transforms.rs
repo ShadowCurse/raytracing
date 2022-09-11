@@ -23,10 +23,9 @@ impl<T: Hittable> Hittable for Translate<T> {
         };
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
-        self.object
-            .bounding_box(time0, time1)
-            .map(|aabb| AABB::new(aabb.minimum + self.offset, aabb.maximum + self.offset))
+    fn bounding_box(&self) -> AABB {
+        let aabb = self.object.bounding_box();
+        AABB::new(aabb.minimum + self.offset, aabb.maximum + self.offset)
     }
 }
 
@@ -42,7 +41,7 @@ impl<T: Hittable> Rotate<T> {
         let radians = angle.to_radians();
         let sin = radians.sin();
         let cos = radians.cos();
-        let aabb = object.bounding_box(0.0, 1.0).unwrap();
+        let aabb = object.bounding_box();
 
         let mut min = Point3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
         let mut max = Point3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
@@ -110,8 +109,8 @@ impl<T: Hittable> Hittable for Rotate<T> {
         }
     }
 
-    fn bounding_box(&self, _: f32, _: f32) -> Option<AABB> {
-        Some(self.aabb)
+    fn bounding_box(&self) -> AABB {
+        self.aabb
     }
 }
 
@@ -180,8 +179,8 @@ impl<T: Hittable, M: Material> Hittable for ConstantMedium<T, M> {
         };
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
-        self.boundary.bounding_box(time0, time1)
+    fn bounding_box(&self) -> AABB {
+        self.boundary.bounding_box()
     }
 }
 
@@ -205,7 +204,7 @@ impl<T: Hittable> Hittable for FlipFace<T> {
         };
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<AABB> {
-        self.object.bounding_box(time0, time1)
+    fn bounding_box(&self) -> AABB {
+        self.object.bounding_box()
     }
 }

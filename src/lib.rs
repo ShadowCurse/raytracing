@@ -1,4 +1,5 @@
 pub use aabb::*;
+pub use blobvec::*;
 pub use bvh::*;
 pub use camera::*;
 pub use hittable::*;
@@ -15,6 +16,7 @@ pub use vec3::*;
 pub use world::*;
 
 pub mod aabb;
+pub mod blobvec;
 pub mod bvh;
 pub mod camera;
 pub mod hittable;
