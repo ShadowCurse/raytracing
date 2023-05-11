@@ -1,11 +1,14 @@
+use std::alloc::Layout;
+use std::any::TypeId;
+use std::collections::HashMap;
+
+use rand::Rng;
+
 use crate::aabb::AABB;
 use crate::blobvec::BlobVec;
 use crate::hittable::{HitRecord, Hittable};
 use crate::ray::Ray;
-use crate::HittableVTable;
-use std::alloc::Layout;
-use std::any::TypeId;
-use std::collections::HashMap;
+use crate::{HittableVTable, Point3, Vec3};
 
 #[derive(Debug, Clone, Copy)]
 pub struct WorldIndex {
@@ -92,5 +95,24 @@ impl Hittable for World {
 
     fn bounding_box(&self) -> AABB {
         self.aabb
+    }
+
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f32 {
+        let total_objects = self.data.iter().fold(0, |sum, (_, blob)| sum + blob.len());
+        let weight = 1.0 / total_objects as f32;
+
+        self.data.iter().fold(0.0, |mut sum, (vtable, blob)| {
+            for i in 0..blob.len() {
+                sum += weight * vtable.pdf_value(unsafe { blob.get(i) }, origin, direction)
+            }
+            sum
+        })
+    }
+
+    fn random(&self, origin: &Vec3) -> Vec3 {
+        let obj_type = rand::thread_rng().gen_range(0..self.data.len());
+        let (vtable, blob) = &self.data[obj_type];
+        let obj_pos = rand::thread_rng().gen_range(0..blob.len());
+        vtable.random(unsafe { blob.get(obj_pos) }, origin)
     }
 }
