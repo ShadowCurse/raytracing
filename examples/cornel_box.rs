@@ -83,17 +83,17 @@ fn cornell_box() -> World {
         Vec3::new(265.0, 0.0, 295.0),
     ));
 
-    world.add(Translate::new(
-        Rotate::new(
-            Box3d::new(
-                Point3::new(0.0, 0.0, 0.0),
-                Point3::new(165.0, 165.0, 165.0),
-                white,
-            ),
-            -18.0,
-        ),
-        Vec3::new(130.0, 0.0, 65.0),
-    ));
+    // world.add(Translate::new(
+    //     Rotate::new(
+    //         Box3d::new(
+    //             Point3::new(0.0, 0.0, 0.0),
+    //             Point3::new(165.0, 165.0, 165.0),
+    //             white,
+    //         ),
+    //         -18.0,
+    //     ),
+    //     Vec3::new(130.0, 0.0, 65.0),
+    // ));
 
     world.add(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
